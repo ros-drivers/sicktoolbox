@@ -1,0 +1,140 @@
+#!/bin/bash
+#==========================================================================
+#==========================================================================
+#
+#  The Sick LIDAR Matlab/C++ Toolbox
+#
+#  File: config_mex
+#  Auth: Jason Derenick at Lehigh University
+#  Cont: derenick(at)lehigh(dot)edu
+#  Date: 22 January 2008
+#
+#  Desc:
+#	 This script configures the Sick LIDAR Matlab mex installation
+#        by detecting the Matlab mex and toolbox directories.
+#
+#  In:   MATLAB_MEX_DIR     - Parent directory of Matlab mex
+#        MATLAB_TOOLBOX_DIR - Matlab toolbox installation directory
+#
+#        Us: config_mex MATLAB_MEX_DIR MATLAB_TOOLBOX_DIR
+#        Ex: config_mex /usr/local/matlab/bin /usr/local/matlab/toolbox
+#        Ex: config_mex clean
+#
+#==========================================================================
+
+CLEAN_CONF="no";
+CONF_DIR=.sickconf;
+
+if [ -n "$1" ]; then
+
+  # Do they want help?
+  if [ $1 = "--help" ]; then  
+    echo "usage: $0 [MATLAB_MEX_DIR [MATLAB_TOOLBOX_DIR]]"
+    echo "example: $0 /usr/local/matlab/bin /usr/local/matlab/toolbox"
+    exit;
+  fi
+
+  # Do they want a clean config?
+  if [ $1 = "clean" ]; then
+    CLEAN_CONF="yes";
+  fi
+
+fi
+
+echo
+echo "The Sick LIDAR Matlab/C++ Toolbox"
+echo "Config Script (Version 1.0)"
+echo
+
+# Check whether to clean the config
+if [ $CLEAN_CONF != "no" ]; then
+
+    echo "Cleaning up..."
+    if [ -e ./$CONF_DIR ]; then
+      rm -R ./$CONF_DIR;
+    fi
+    echo "       Done cleaning!"
+
+    echo
+    echo "*** To CONFIG re-run config_mex :o) ***";
+    echo 
+
+    exit;
+
+fi
+
+# Check whether to make temp dir
+if [ ! -e ./$CONF_DIR ]; then
+
+  mkdir ./$CONF_DIR 2>/dev/null;
+  if [ ! $? -eq 0 ]; then
+    echo "$0: Couldn't make temp directory! Permissions problem?"
+    exit;
+  fi
+
+fi
+
+if [ -n "$1" ]; then
+
+  # Assign the bin dir
+  BIN_DIR=$1;
+
+else
+
+  # Detect the matlab bin dir
+  echo "Checking for Matlab mex..."
+  RES_STR=`matlab -n | grep " DIR = "`;
+  BIN_DIR=${RES_STR#->*= };
+
+  # Did script find bin?
+  if [ -z $BIN_DIR ]; then
+    echo "$0: Failed to locate bin directory! Try --help"
+    exit;
+  fi
+
+fi
+
+# Check whether mex exists
+if [ ! -e $BIN_DIR/mex ]; then
+  echo "$0: Invalid mex directory!"
+  exit;
+fi
+
+# Write the bin dir to file
+echo $BIN_DIR > .matbin && mv .matbin $CONF_DIR;
+echo "       Using mex dir: $BIN_DIR"
+echo
+
+# Did they give toolbox path?
+if [ -n "$2" ]; then
+
+  # Assign the toolbox dir
+  BOX_DIR=$2;
+
+else
+
+  # Detect the matlab BOX directory
+  echo "Checking for Matlab toolbox directory..."
+  RES_STR=`matlab -n | grep "TOOLBOX"`;
+  BOX_DIR=${RES_STR#->*= };
+
+  # Did script find toolbox dir?
+  if [ -z $BOX_DIR ]; then
+    echo "$0: Failed to detect toolbox directory! Try --help"
+    exit;
+  fi
+
+fi
+
+# Check whether directory exists
+if [ ! -e $BOX_DIR ]; then
+  echo "$0: Invalid toolbox directory!"
+  exit;
+fi
+
+echo $BOX_DIR > .matbox && mv .matbox $CONF_DIR
+echo "       Using toolbox dir: $BOX_DIR"
+
+echo
+echo "*** To BUILD run build_mex :o) ***";
+echo

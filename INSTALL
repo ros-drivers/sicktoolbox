@@ -1,0 +1,51 @@
+-------------------------------------------------------------------
+-------------------------------------------------------------------
+The Sick LIDAR Matlab/C++ Toolbox
+-------------------------------------------------------------------
+
+***INSTALLATION
+
+The toolbox is configured w/ GNU Autotools and thus can be build
+and installed using the normal three step process. Additionally,
+all standard make file targets are present. In short, follow these
+steps:
+
+- C++ Libraries:
+
+  To install the toolbox C++ libraries do the following from the
+  project's root:
+
+    1. ./configure
+    2. make
+    3. make install  (Note: This step must be done as admin/root)
+
+  This sequence of steps will build and install the libraries w/
+  headers necessary for building C++ code. As installation will
+  copy files to /usr/local/bin make install must be run as admin
+
+- Matlab Mex Interface:
+
+  To build the mex interface do the following:
+  NOTE: If the C++ libs are installed no need to do ./configure
+        (Step 1) again
+
+    1. ./configure  
+    2. run Matlab as admin/root
+    3. cd to sicktoolbox-1.0/mex
+    4. run build_toolbox
+    5. run install_toolbox
+
+***UNINSTALLATION
+
+- C++ Libraries
+
+  To uninstall the C++ libraries, simply run "make uninstall" from
+  the project's root.
+
+- Matlab Mex Interface
+
+  To uninstall the mex interface, simply delete the directory
+  $MATLABROOT/toolbox/sick and remove it from your Matlab path.
+  Here $MATLABROOT references Matlab's root directory.
+
+-------------------------------------------------------------------
