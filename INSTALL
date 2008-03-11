@@ -15,9 +15,9 @@ steps:
   To install the toolbox C++ libraries do the following from the
   project's root:
 
-    1. ./configure
-    2. make
-    3. make install  (Note: This step must be done as admin/root)
+    ./configure
+    make
+    make install (Note: This step must be done as admin/root)
 
   This sequence of steps will build and install the libraries w/
   headers necessary for building C++ code. As installation will
@@ -29,11 +29,11 @@ steps:
   NOTE: If the C++ libs are installed no need to do ./configure
         (Step 1) again
 
-    1. ./configure  
-    2. run Matlab as admin/root
-    3. cd to sicktoolbox-1.0/mex
-    4. run build_toolbox
-    5. run install_toolbox
+    ./configure (Note: This generates the header for C++ libs) 
+    cd matlab
+    ./config_mex
+    ./build_mex
+    ./install_mex (Note: This step must be done as admin/root)
 
 ***UNINSTALLATION
 
