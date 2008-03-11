@@ -7,7 +7,7 @@
 #  File: build_mex
 #  Auth: Jason Derenick at Lehigh University
 #  Cont: derenick(at)lehigh(dot)edu
-#  Date: 22 January 2008
+#  Date: 10 March 2008
 #
 #  In:   BUILD_TYPE: 'ld' or 'lms' or 'both' (default: 'both') or 'clean'
 #
