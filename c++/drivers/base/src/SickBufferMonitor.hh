@@ -430,14 +430,7 @@ namespace SickToolbox {
 	  break;
 	}
 
-	try {
-	  buffer_monitor->GetNextMessageFromDataStream(curr_message);
-	}
-	catch(...) {
-	  buffer_monitor->ReleaseDataStream();
-	  return NULL;
-	}
-
+	buffer_monitor->GetNextMessageFromDataStream(curr_message);
 	buffer_monitor->ReleaseDataStream();
 	
 	/* Update message container contents */
