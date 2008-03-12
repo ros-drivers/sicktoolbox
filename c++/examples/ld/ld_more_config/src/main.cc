@@ -1,3 +1,4 @@
+
 /*!
  * \file main.cc
  * \brief Illustrates a variety of ways to configure the flash
@@ -42,11 +43,20 @@ int main (int argc, char *argv[]) {
   /* Define the object */
   SickLD sick_ld(sick_ip_addr);
 
+  /*
+   * Initialize the Sick LD
+   */
+  try {
+    sick_ld.Initialize();
+  }
+
+  catch(...) {
+    cerr << "Initialize failed! Are you using the correct IP address?" << endl;
+    return -1;
+  }
+  
   try {
   
-    /* Attempt to initialize */
-    sick_ld.Initialize();
-    
     /* Assign absolute and then relative time */
     //uint16_t new_sick_time = 0;
     //sick_ld.SetSickTimeAbsolute(1500,new_sick_time);
@@ -56,7 +66,7 @@ int main (int argc, char *argv[]) {
     
     /* Configure the Sick LD sensor ID */
     //sick_ld.PrintSickGlobalConfig();
-    //sick_ld.SetSickSensorID(18);
+    //sick_ld.SetSickSensorID(16);
     //sick_ld.PrintSickGlobalConfig();
     
     /* Configure the sick motor speed */
@@ -78,18 +88,25 @@ int main (int argc, char *argv[]) {
     //sick_ld.PrintSickGlobalConfig();
     //sick_ld.PrintSickSectorConfig();
     
-    /* Attempt to uninitialize */
-    sick_ld.Uninitialize();
-
   }
 
   catch(...) {
     cerr << "An error occurred!" << endl;
-    return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_ld.Uninitialize();
+  }
   
-  /* Success !*/
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
+    return -1;
+  }
+    
+  /* Success! */
   return 0;
+
 }

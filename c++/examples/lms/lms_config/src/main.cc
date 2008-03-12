@@ -123,13 +123,8 @@ int main(int argc, char * argv[]) {
     sick_lms->Initialize(desired_baud);
   }
 
-  catch(SickException &sick_exception) {
-    cerr << "A Sick exception occurred!" << endl;
-    return -1;
-  }
-  
   catch(...) {
-    cerr << "An error occurred!" << endl;
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
     return -1;
   }
   
@@ -615,7 +610,7 @@ void setSensitivityLevel() {
       
     }
     
-    catch(SickException &sick_exception) {
+    catch( SickException &sick_exception ) {
       cerr << "A Sick exception occurred!" << endl;
       exit(-1);
     }

@@ -130,13 +130,13 @@ int main(int argc, char* argv[])
   cout << "Sick LD Config Utility          " << endl;
   cout << endl;
 
-  /* Initialize the device */
+  /* Initialize the Sick LD */
   try {
     sick_ld->Initialize();
   }
 
   catch(...) {
-    cerr << "ERROR: Initialize failed! Are you using the correct IP address?" << endl;
+    cerr << "Initialize failed! Are you using the correct IP address?" << endl;
     return -1;
   }
 

@@ -23,17 +23,18 @@
 #include <sicklms-1.0/SickLMS.hh>
 
 /* Use the namespace */
+using namespace std;
 using namespace SickToolbox;
 
 int main(int argc, char * argv[]) {
   
-  std::string device_str;                
+  string device_str;                
   SickLMS::sick_lms_baud_t desired_baud = SickLMS::SICK_BAUD_38400;
   
   /* Check for a device path.  If it's not present, print a usage statement. */
   if ((argc != 2 && argc != 3) || (argc == 2 && strcasecmp(argv[1],"--help") == 0)) {
-    std::cout << "Usage: lms_set_variant PATH [BAUD RATE]" << std::endl
-	      << "Ex: lms_set_variant /dev/ttyUSB0 9600" << std::endl;
+    cout << "Usage: lms_set_variant PATH [BAUD RATE]" << endl
+	 << "Ex: lms_set_variant /dev/ttyUSB0 9600" << endl;
     return -1;
   }
 
@@ -46,7 +47,7 @@ int main(int argc, char * argv[]) {
   if (argc == 3) {    
     device_str = argv[1];
     if ((desired_baud = SickLMS::StringToSickBaud(argv[2])) == SickLMS::SICK_BAUD_UNKNOWN) {
-      std::cerr << "Invalid baud value! Valid values are: 9600, 19200, 38400, and 500000" << std::endl;
+      cerr << "Invalid baud value! Valid values are: 9600, 19200, 38400, and 500000" << endl;
       return -1;
     }
   }
@@ -57,102 +58,95 @@ int main(int argc, char * argv[]) {
   /* Define some buffers to hold the returned measurements */
   unsigned int values[SickLMS::SICK_MAX_NUM_MEASUREMENTS] = {0};
   unsigned int num_values = 0;
-  
+
+  /*
+   * Initialize the Sick LMS 2xx
+   */
   try {
-
-    /*
-     * Attempt to initialize the device
-     */
     sick_lms.Initialize(desired_baud);
-
-    /*
-     * Set the device variant to 100/0.25
-     *
-     * NOTE: If an invalid variant definition is
-     *       given a SickConfigException will be
-     *       thrown stating so.
-     *
-     */
-    std::cout << "\tSetting variant to 100/0.25" << std::endl << std::flush;
-    sick_lms.SetSickVariant(SickLMS::SICK_SCAN_ANGLE_100,SickLMS::SICK_SCAN_RESOLUTION_25);
-    
-    /*
-     * Acquire some measurements from Sick LMS 2xx using 100/0.25
-     */
-    std::cout << "\tAcquiring some measurements..." << std::endl << std::flush;
-    for(unsigned int i = 0; i < 10; i++) {
-
-      try {
-      
-	/* Acquire the most recent scan from the Sick */
-	sick_lms.GetSickScan(values,num_values);
-
-	/* Display the number of measurements */
-	std::cout << "\t  Num. Values: " << num_values << std::endl << std::flush;
-	
-      }
-
-      /* Ignore a timeout if it occurs */
-      catch(SickTimeoutException &sick_timeout) {
-	std::cerr << sick_timeout.what() << std::endl;
-      }
-
-      /* Catch and rethrow any other Sick exception */
-      catch(SickException &sick_exception) {
-	std::cerr << sick_exception.what() << std::endl;
-	throw;
-      }
-
-    }
-
-    /*
-     * Set the device variant to 180/0.5
-     */
-    std::cout << std::endl << "\tSetting variant to 180/0.50" << std::endl;
-    sick_lms.SetSickVariant(SickLMS::SICK_SCAN_ANGLE_180,SickLMS::SICK_SCAN_RESOLUTION_50);
-    
-    /*
-     * Acquire some measurements from Sick LMS 2xx using 180/0.50
-     */
-    std::cout << "\tAcquiring some measurements..." << std::endl << std::flush;
-    for(unsigned int i = 0; i < 10; i++) {
-
-      try {
-      
-	/* Acquire the most recent scan from the Sick */
-	sick_lms.GetSickScan(values,num_values);
-
-	/* Display the number of measured values */
-	std::cout << "\t  Num. Values: " << num_values << std::endl << std::flush;
-	
-      }
-
-      /* Ignore a timeout if it occurs */
-      catch(SickTimeoutException &sick_timeout) {
-	std::cerr << sick_timeout.what() << std::endl;
-      }
-
-      /* Throw away anything else */
-      catch(...) {
-	throw;
-      }
-
-    }
-    
-    /*
-     * Attempt to uninitialize the device
-     */
-    sick_lms.Uninitialize();
-    
   }
 
-  /* Bail for any other exception */
   catch(...) {
-    std::cerr << "An error occurred!" << std::endl;
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
+    return -1;
+  }  
+
+  /*
+   * Check whether device is LMS Fast
+   */
+  if (!sick_lms.IsSickLMSFast()) {
+
+    try {
+      
+      /*
+       * Set the device variant to 100/0.25
+       *
+       * NOTE: If an invalid variant definition is
+       *       given a SickConfigException will be
+       *       thrown stating so.
+       *
+       */
+      cout << "\tSetting variant to 100/0.25" << std::endl << flush;
+      sick_lms.SetSickVariant(SickLMS::SICK_SCAN_ANGLE_100,SickLMS::SICK_SCAN_RESOLUTION_25);
+      
+      /*
+       * Acquire some measurements from Sick LMS 2xx using 100/0.25
+       */
+      cout << "\tAcquiring some measurements..." << endl;
+      for(unsigned int i = 0; i < 10; i++) {
+	
+	/* Acquire the most recent scan from the Sick */
+	sick_lms.GetSickScan(values,num_values);
+	
+	/* Display the number of measurements */
+	cout << "\t  Num. Values: " << num_values << endl;
+	
+      }
+      
+      /*
+       * Set the device variant to 180/0.5
+       */
+      cout << std::endl << "\tSetting variant to 180/0.50" << endl;
+      sick_lms.SetSickVariant(SickLMS::SICK_SCAN_ANGLE_180,SickLMS::SICK_SCAN_RESOLUTION_50);
+      
+      /*
+       * Acquire some measurements from Sick LMS 2xx using 180/0.50
+       */
+      cout << "\tAcquiring some measurements..." << endl;
+      for(unsigned int i = 0; i < 10; i++) {
+	
+	/* Acquire the most recent scan from the Sick */
+	sick_lms.GetSickScan(values,num_values);
+	
+	/* Display the number of measured values */
+	cout << "\t  Num. Values: " << num_values << endl;
+	
+      }
+      
+    }
+
+    catch(...) {
+      cerr << "An error occurred!" << endl;
+    }
+
+  }
+    
+  else {
+    cerr << "Oops... Your Sick is an LMS Fast!" << endl;
+    cerr << "It doesn't support the variant command." << endl;
+  }
+    
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
+  
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
     return -1;
   }
-
-  std::cout << "Done!!! :o)" << std::endl;
   
   /* Success! */
   return 0;

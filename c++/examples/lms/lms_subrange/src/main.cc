@@ -56,55 +56,52 @@ int main(int argc, char* argv[])
    */
   SickLMS sick_lms(device_str);
 
+  /*
+   * Initialize the Sick LMS 2xx
+   */
   try {
-
-    /*
-     * Initialize the LIDAR
-     */
     sick_lms.Initialize(desired_baud);
+  }
+
+  catch(...) {
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
+    return -1;
+  }  
+  
+  try {
 
     /*
      * Acquire a few scans from the Sick LMS
      */
     for (unsigned int i=0; i < 10; i++) {
 
-      try {
-
-	/*
-	 * Acquire the first ten measurements of a scan from the Sick
-	 */
-	sick_lms.GetSickScanSubrange(1,10,values,num_values);
-	cout << "\t  Num. Values: " << num_values << endl;
-
-      }
-
-      /* Here we let the timeout slide and hope it isn't serious */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Anything else is not ok, throw it away */
-      catch(...) {
-	throw;
-      }
+      /*
+       * Acquire the first ten measurements of a scan from the Sick
+       */
+      sick_lms.GetSickScanSubrange(1,10,values,num_values);
+      cout << "\t  Num. Values: " << num_values << endl;
       
     }
 
-    /*
-     * Uninitialize the device
-     */    
-    sick_lms.Uninitialize();
-
   }
 
-  /* Catch anything else and exit */ 
   catch(...) {
     cerr << "An error occurred!" << endl;
-    return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
   
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
+    return -1;
+  }
+  
+  /* Success! */
   return 0;
 
 }

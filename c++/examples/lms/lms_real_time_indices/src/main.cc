@@ -59,63 +59,65 @@ int main(int argc, char* argv[])
    */
   SickLMS sick_lms(device_str);
 
+  /*
+   * Initialize the Sick LMS 2xx
+   */
   try {
-
-    /*
-     * Initialize the LIDAR
-     */
     sick_lms.Initialize(desired_baud);
-
-    /*
-     * Ask user to set real-time indices
-     */
-    if (!(sick_lms.GetSickAvailability() & SickLMS::SICK_FLAG_AVAILABILITY_REAL_TIME_INDICES)) {
-      cout << "For this example, please set the Sick LMS to an availability w/ real-time indices..." << endl;
-      cout << "Hint: Use the lms_config utility/example! :o)"<< endl;
-      sick_lms.Uninitialize();
-      return -1;
-    }
-    
-    /*
-     * Acquire a few scans from the Sick LMS
-     */
-    for (unsigned int i=0; i < 10; i++) {
-
-      try {
-
-	/* We don't want Fields A,B, or C, so we pass NULL */
-	sick_lms.GetSickScan(values,num_values,NULL,NULL,NULL,&telegram_idx,&real_time_idx);
-	cout << "\t  Num. Values: " << num_values << ", Msg Idx: " << telegram_idx << ", Real-time Idx: " << real_time_idx << endl;
-
-      }
-
-      /* Here we let the timeout slide and hope it isn't serious */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Anything else is not ok, throw it away */
-      catch(...) {
-	throw;
-      }
-      
-    }
-
-    /*
-     * Uninitialize the device
-     */    
-    sick_lms.Uninitialize();
-
   }
 
-  /* Catch anything else and exit */ 
   catch(...) {
-    cerr << "An error occurred!" << endl;
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
     return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
+  /*
+   * Ensure real-time indices are enabled
+   */
+  if (sick_lms.GetSickAvailability() & SickLMS::SICK_FLAG_AVAILABILITY_REAL_TIME_INDICES) {
+
+    try {
+    
+      /*
+       * Acquire a few scans from the Sick LMS
+       */
+      for (unsigned int i=0; i < 10; i++) {
+	
+	/* We don't want Fields A,B, or C, so we pass NULL */
+	sick_lms.GetSickScan(values,num_values,NULL,NULL,NULL,&telegram_idx,&real_time_idx);
+	cout << "\t  Num. Values: " << num_values << ", Msg Idx: " << telegram_idx
+	     << ", Real-time Idx: " << real_time_idx << endl;
+	
+      }
+      
+    }
+    
+    /* Catch anything else and exit */ 
+    catch(...) {
+      cerr << "An error occurred!" << endl;
+      return -1;
+    }
+
+  }
+    
+  else {
+    cout << "Please set the Sick LMS to an availability w/ real-time indices..." << endl;
+    cout << "Hint: Use the lms_config utility/example! :o)"<< endl;
+  }
+
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
   
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
+    return -1;
+  }
+  
+  /* Success! */
   return 0;
 
 }

@@ -72,13 +72,20 @@ int main(int argc, char * argv[]) {
   /* Define some buffers to hold the returned measurements */
   unsigned int values[SickLMS::SICK_MAX_NUM_MEASUREMENTS] = {0};
   unsigned int num_values = 0;
+
+  /*
+   * Initialize the Sick LMS 2xx
+   */
+  try {
+    sick_lms.Initialize(desired_baud);
+  }
+
+  catch(...) {
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
+    return -1;
+  }
   
   try {
-
-    /*
-     * Attempt to initialize the device
-     */
-    sick_lms.Initialize(desired_baud);
 
     /*
      * Check whether the device is returning reflectivity
@@ -91,56 +98,48 @@ int main(int argc, char * argv[]) {
      * Acquire measurements from Sick LMS 2xx and plot
      * them using gnuplot_i++
      */
-    cout << "\tGrabbing 200 measurements..." << endl << endl;
-    for (unsigned int i = 0; i < 200 && running; i++) {
-
-      try {
+    cout << "\tGrabbing 100 measurements..." << endl << endl;
+    for (unsigned int i = 0; i < 100 && running; i++) {
       
-	/* Acquire the most recent scan from the Sick */
-	sick_lms.GetSickScan(values,num_values);
-
-	/* Populate the data vector */
-	for(unsigned int j = 0; j < num_values; j++) {
-	  data_vector.push_back((double)values[j]);
-	}
-
-	/* Plot the values */
-	data_plot.plot_x(data_vector,plot_label.c_str());
-	
+      /* Acquire the most recent scan from the Sick */
+      sick_lms.GetSickScan(values,num_values);
+      
+      /* Populate the data vector */
+      for(unsigned int j = 0; j < num_values; j++) {
+	data_vector.push_back((double)values[j]);
       }
-
-      /* Ignore a timeout if it occurs */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Catch and rethrow any other Sick exception */
-      catch(...) {
-	throw;
-      }
-
+      
+      /* Plot the values */
+      data_plot.plot_x(data_vector,plot_label.c_str());
+      
       /* Sleep a bit (gnuplot likes this) */
       usleep(10000);
-
+      
       /* Reset plot and vector */
       data_plot.reset_plot();
       data_vector.clear();
       
     }
 
-    /*
-     * Attempt to uninitialize the device
-     */
-    sick_lms.Uninitialize();
-    
   }
 
   /* Handle anything else */
   catch(...) {
     cerr << "An error occurred!"  << endl;
+  }
+
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
+  
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
     return -1;
   }
-    
+  
   /* Success! */
   return 0;
 

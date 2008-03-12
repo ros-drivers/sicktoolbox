@@ -56,52 +56,58 @@ int main(int argc, char* argv[]) {
    * Instantiate driver instance
    */
   SickLMS sick_lms(device_str);
-  
+
+  /*
+   * Initialize the Sick LMS 2xx
+   */
   try {
-
-    /*
-     * Initialize the Sick LMS 291-S14
-     */
     sick_lms.Initialize(desired_baud);
-    
-    /*
-     * Grab range and reflectivity data from the Sick LMS 291-S14
-     */
-    for (unsigned int i=0; i < 100; i++) {
-
-      try {
-	
-	sick_lms.GetSickScan(range_values,reflect_values,num_range_values,num_reflect_values);
-	cout << "Num. Range Vals: " << num_range_values << " Num. Reflect Vals: " << num_reflect_values << endl;	
-
-      }
-
-      /* Here we let the timeout slide and hope it isn't serious */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Anything else is not ok, throw it away */
-      catch(...) {
-	throw;
-      }
-
-    }
-
-    /*
-     * Uninitialize the device
-     */
-    sick_lms.Uninitialize();
-    
   }
-
-  /* Catch anything else and exit */
-  catch (...) {
-    cerr << "An error occurred!" << endl;
+  
+  catch(...) {
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
     return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
+  /*
+   * Ensure it is an LMS Fast model
+   */
+  if (sick_lms.IsSickLMSFast()) {
+
+    /*
+     * Grab range and reflectivity data from the Sick LMS Fast
+     */        
+    try {
+      
+      for (unsigned int i=0; i < 10; i++) {
+	sick_lms.GetSickScan(range_values,reflect_values,num_range_values,num_reflect_values);
+	cout << "Num. Range Vals: " << num_range_values << " Num. Reflect Vals: " << num_reflect_values << endl;	
+      }
+      
+    }
+
+    catch (...) {
+      cerr << "An error occurred!" << endl;
+    }
+
+  }
+
+  else {
+    cerr << "Oops... Your Sick is NOT an LMS Fast!" << endl;
+    cerr << "It doesn't support this kind of stream." << endl;
+  }
+   
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
+  
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
+    return -1;
+  }
   
   /* Success! */
   return 0;

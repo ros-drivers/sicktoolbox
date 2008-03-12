@@ -39,9 +39,6 @@ int main (int argc, char *argv[]) {
     sick_ip_addr = argv[1];
   }
 
-  /* Define the object */
-  SickLD sick_ld(sick_ip_addr);
-
   /* Define the data buffers */
   double values[SickLD::SICK_MAX_NUM_MEASUREMENTS] = {0};
   unsigned int num_values = 0;
@@ -49,11 +46,23 @@ int main (int argc, char *argv[]) {
   /* Define the bounds for a single sector */
   double sector_start_ang = 90;
   double sector_stop_ang = 270;
+
+  /* Define the object */
+  SickLD sick_ld(sick_ip_addr);
+
+  /*
+   * Initialize the Sick LD
+   */
+  try {
+    sick_ld.Initialize();
+  }
+  
+  catch(...) {
+    cerr << "Initialize failed! Are you using the correct IP address?" << endl;
+    return -1;
+  }
   
   try {
-  
-    /* Attempt to initialize */
-    sick_ld.Initialize();
 
     /* Set the desired sector configuration */
     sick_ld.SetSickTempScanAreas(&sector_start_ang,&sector_stop_ang,1);
@@ -64,40 +73,32 @@ int main (int argc, char *argv[]) {
     /* Acquire some range measurements */
     for (unsigned int i = 0; i < 10; i++) {
 
-      try {
-      
-	/* Here we only want the range values so the second arg is NULL */
-	sick_ld.GetSickMeasurements(values,NULL,&num_values);
-	cout << "\t  Num. Values: " << num_values << endl;    
-
-      }
-
-      /* Hope that the timeout isn't serious */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Rethrow anything else */
-      catch(...) {
-	throw;
-      }
+      /* Here we only want the range values so the second arg is NULL */
+      sick_ld.GetSickMeasurements(values,NULL,&num_values);
+      cout << "\t  Num. Values: " << num_values << endl;    
       
     }
-
-    /* Attempt to uninitialize */
-    sick_ld.Uninitialize();
 
   }
 
   /* Catch any exceptions */
   catch(...) {
     cerr << "An error occurred!" << endl;
-    return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_ld.Uninitialize();
+  }
+  
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
+    return -1;
+  }
   
   /* Success !*/
   return 0;
-
+  
 }

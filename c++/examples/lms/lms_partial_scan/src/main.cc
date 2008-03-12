@@ -58,79 +58,81 @@ int main(int argc, char* argv[]) {
    */
   SickLMS sick_lms(device_str);
 
+  /*
+   * Initialize the Sick LMS 2xx
+   */
   try {
-
-    /*
-     * Initialize the LIDAR
-     */
     sick_lms.Initialize(desired_baud);
-
-    /*
-     * Ask user to set real-time indices
-     */
-    if (!(sick_lms.GetSickAvailability() & SickLMS::SICK_FLAG_AVAILABILITY_REAL_TIME_INDICES)) {
-      cout << "For this example, please set the Sick LMS to an availability w/ real-time indices..." << endl;
-      cout << "Hint: Use the lms_config utility/example! :o)"<< endl;
-      sick_lms.Uninitialize();
-      return -1;
-    }
-    
-    /*
-     * Set the device variant to 100/0.25
-     *
-     * NOTE: Setting the variant this way ensures that the
-     *       partial scans will start at angles that are a
-     *       multiple of 0.25 deg.
-     *
-     */
-    sick_lms.SetSickVariant(SickLMS::SICK_SCAN_ANGLE_100,SickLMS::SICK_SCAN_RESOLUTION_25);
-    
-    /*
-     * Acquire some partial scans from Sick
-     */
-    for (unsigned int i=0; i < 12; i++) {
-
-      /*
-       * NOTE: Notice that here we are also obtaining the telegram idx.  In a
-       *       proper implementation, this value would be used to ensure the
-       *       temporal consistency (acting as a sequence number) of the newly
-       *       obtained partial scan. Here we simply just print it out. 
-       */
-      try {
-
-	/* We don't want Field A,B, or C outputs... so we pass in NULL for these params */
-	sick_lms.GetSickPartialScan(values,num_values,scan_idx,NULL,NULL,NULL,&telegram_idx);
-	cout << "\t  Start angle: " << setw(4) << 0.25*scan_idx << ", Num. Values: " << num_values << ", Msg Idx: " << telegram_idx << endl;
-
-      }
-
-      /* Here we let the timeout slide and hope it isn't serious */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Anything else is not ok, throw it away */
-      catch(...) {
-	throw;
-      }
-      
-    }
-
-    /*
-     * Uninitialize the device
-     */    
-    sick_lms.Uninitialize();
-
   }
 
-  /* Catch anything else and exit */ 
   catch(...) {
-    cerr << "An error occurred!" << endl;
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
     return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
+  /*
+   * Ensure real-time indices are set
+   */
+  if (sick_lms.GetSickAvailability() & SickLMS::SICK_FLAG_AVAILABILITY_REAL_TIME_INDICES) {
   
+    try {
+      
+      /*
+       * Set the device variant to 100/0.25
+       *
+       * NOTE: Setting the variant this way ensures that the
+       *       partial scans will start at angles that are a
+       *       multiple of 0.25 deg.
+       *
+       */
+      sick_lms.SetSickVariant(SickLMS::SICK_SCAN_ANGLE_100,SickLMS::SICK_SCAN_RESOLUTION_25);
+      
+      /*
+       * Acquire some partial scans from Sick
+       */
+      for (unsigned int i=0; i < 12; i++) {
+	
+	/*
+	 * NOTE: Notice that here we are also obtaining the telegram idx.  In a
+	 *       proper implementation, this value would be used to ensure the
+	 *       temporal consistency (acting as a sequence number) of the newly
+	 *       obtained partial scan. Here we simply just print it out.
+	 *
+	 *       Also, we don't want Field A,B, or C outputs... so we pass in
+	 *       NULL for these params.
+	 */	
+	sick_lms.GetSickPartialScan(values,num_values,scan_idx,NULL,NULL,NULL,&telegram_idx);
+	cout << "\t  Start angle: " << setw(4) << 0.25*scan_idx << ", Num. Values: " << num_values << ", Msg Idx: " << telegram_idx << endl;
+	
+      }
+      
+    }
+    
+    /* Catch anything else and exit */ 
+    catch(...) {
+      cerr << "An error occurred!" << endl;
+    }
+    
+  }
+
+  else {
+    cout << "Please set the Sick LMS to an availability w/ real-time indices..." << endl;
+    cout << "Hint: Use the lms_config utility/example! :o)"<< endl;
+  }
+  
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
+  
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
+    return -1;
+  }
+
+  /* Success! */
   return 0;
 
 }

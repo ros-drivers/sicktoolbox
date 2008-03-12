@@ -56,59 +56,57 @@ int main(int argc, char* argv[])
    */
   SickLMS sick_lms(device_str);
 
+  /*
+   * Initialize the Sick LMS 2xx
+   */
+  try {
+    sick_lms.Initialize(desired_baud);
+  }
+
+  catch(...) {
+    cerr << "Initialize failed! Are you using the correct device path?" << endl;
+    return -1;
+  }
+  
+  /*
+   * Acquire a few scans from the Sick LMS
+   */
   try {
 
-    /*
-     * Initialize the LIDAR
-     */
-    sick_lms.Initialize(desired_baud);
-
-    /*
-     * Acquire a few scans from the Sick LMS
-     */
     for (unsigned int i=0; i < 10; i++) {
 
-      try {
-
-	/*
-	 * The first argument is an input to the driver
-	 * telling it the number of raw scans over which
-	 * the Sick should average. (i.e. here, the Sick
-	 * will average over 5 scans before returning
-	 * the resulting mean values)
-	 */
-	sick_lms.GetSickMeanValues(5,values,num_values);
-	cout << "\t  Num. Values: " << num_values << endl;
-
-      }
-
-      /* Here we let the timeout slide and hope it isn't serious */
-      catch(SickTimeoutException &sick_timeout_exception) {
-	cerr << sick_timeout_exception.what() << endl;
-      }
-
-      /* Anything else is not ok, throw it away */
-      catch(...) {
-	throw;
-      }
+      /*
+       * The first argument is an input to the driver
+       * telling it the number of raw scans over which
+       * the Sick should average. (i.e. here, the Sick
+       * will average over 5 scans before returning
+       * the resulting mean values)
+       */
+      sick_lms.GetSickMeanValues(5,values,num_values);
+      cout << "\t  Num. Values: " << num_values << endl;
       
     }
-
-    /*
-     * Uninitialize the device
-     */    
-    sick_lms.Uninitialize();
 
   }
 
   /* Catch anything else and exit */ 
   catch(...) {
     cerr << "An error occurred!" << endl;
+  }
+
+  /*
+   * Uninitialize the device
+   */
+  try {
+    sick_lms.Uninitialize();
+  }
+  
+  catch(...) {
+    cerr << "Uninitialize failed!" << endl;
     return -1;
   }
 
-  cout << "Done!!! :o)" << endl;
-  
+  /* Success! */
   return 0;
 
 }
