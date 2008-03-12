@@ -263,7 +263,7 @@ namespace SickToolbox {
       uint8_t sick_measuring_units;                                            ///< Sick measuring units {cm,mm}
       uint8_t sick_address;                                                    ///< Sick device address
       uint8_t sick_variant;                                                    ///< Sick variant {special,standard}
-    } __attribute__((packed)) sick_lms_operating_status_t;
+    } sick_lms_operating_status_t;
     
     /*!
      * \struct sick_lms_software_status_tag
@@ -278,7 +278,7 @@ namespace SickToolbox {
     typedef struct sick_lms_software_status_tag {
       uint8_t sick_system_software_version[8];                                 ///< Sick system software version
       uint8_t sick_prom_software_version[8];                                   ///< Sick boot prom software version
-    } __attribute__((packed)) sick_lms_software_status_t;
+    } sick_lms_software_status_t;
     
     /*!
      * \struct sick_lms_restart_status_tag
@@ -289,7 +289,7 @@ namespace SickToolbox {
     typedef struct sick_lms_restart_status_tag {
       uint16_t sick_restart_time;                                              ///< Sick restart time  
       uint8_t sick_restart_mode;                                               ///< Sick restart mode
-    } __attribute__((packed)) sick_lms_restart_status_t;
+    } sick_lms_restart_status_t;
     
     /*!
      * \struct sick_lms_pollution_status_tag
@@ -306,7 +306,7 @@ namespace SickToolbox {
       uint16_t sick_pollution_calibration_vals[8];                             ///< Calibrating the pollution channel values
       uint16_t sick_reference_pollution_vals[4];                               ///< Reference pollution values
       uint16_t sick_reference_pollution_calibration_vals[4];                   ///< Reference pollution calibration values
-    } __attribute__((packed)) sick_lms_pollution_status_t;
+    } sick_lms_pollution_status_t;
     
     /*!
      * \struct sick_lms_signal_status_tag
@@ -334,7 +334,7 @@ namespace SickToolbox {
       uint16_t sick_peak_threshold_actual_value;                               ///< Actual value of the peak threshold in ADC incs
       uint16_t sick_reference_target_single_measured_vals;                     ///< Reference target "single measured values." Low byte: Current number of filtered single measured values. High byte: Max num filtered single measured value since power-on. 
       uint16_t sick_reference_target_mean_measured_vals;                       ///< Reference target "mean measured values." Low byte: Current number of filtered mean measured values. High byte: Max num filtered mean measured value since power-on. 
-    } __attribute__((packed)) sick_lms_signal_status_t;
+    } sick_lms_signal_status_t;
     
     /*!
      * \struct sick_lms_field_status_tag
@@ -350,7 +350,7 @@ namespace SickToolbox {
       uint8_t sick_field_evaluation_number;                                    ///< Number of evaluations when the field is infirnged (lies in [1,125])
       uint8_t sick_field_set_number;                                           ///< Active field set number
       uint8_t sick_multiple_evaluation_offset_field_2;                         ///< Offset for multiple evaluation of field set 2 (see page 105 of telegram listing)
-    } __attribute__((packed)) sick_lms_field_status_t;
+    } sick_lms_field_status_t;
     
     /*!
      * \struct sick_lms_baud_status_tag
@@ -364,7 +364,7 @@ namespace SickToolbox {
     typedef struct sick_lms_baud_status_tag {
       uint16_t sick_baud_rate;                                                 ///< Sick baud as reported by the device 
       uint8_t sick_permanent_baud_rate;                                        ///< 0 - When power is switched on baud rate is 9600/1 - configured transmission rate is used                                   
-    } __attribute__((packed)) sick_lms_baud_status_t;
+    } sick_lms_baud_status_t;
     
     /*!
      * \struct sick_lms_device_config_tag
@@ -407,7 +407,7 @@ namespace SickToolbox {
       uint8_t sick_contour_c_stop_angle;                                       ///< When contour function is active the stop angle of area to be monitored is defined (deg)
       uint8_t sick_pixel_oriented_evaluation;                                  ///< Pixel oriented evaluation
       uint8_t sick_single_measured_value_evaluation_mode;                      ///< Multiple evaluation (min: 1, max: 125)
-    } __attribute__((packed)) sick_lms_device_config_t;
+    } sick_lms_device_config_t;
     
     /*!
      * \struct sick_lms_scan_profile_b0_tag
@@ -428,7 +428,7 @@ namespace SickToolbox {
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
       uint8_t sick_partial_scan_index;                                         ///< Indicates the start angle of the scan (This is useful for partial scans)
-    } __attribute__((packed)) sick_lms_scan_profile_b0_t;
+    } sick_lms_scan_profile_b0_t;
     
     /*!
      * \struct sick_lms_scan_profile_b6_tag
@@ -446,7 +446,7 @@ namespace SickToolbox {
       uint8_t sick_sample_size;                                                ///< Number of scans used in computing the returned mean
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
-    } __attribute__((packed)) sick_lms_scan_profile_b6_t;
+    } sick_lms_scan_profile_b6_t;
     
     /*!
      * \struct sick_lms_scan_profile_b7_tag
@@ -469,7 +469,7 @@ namespace SickToolbox {
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
       uint8_t sick_partial_scan_index;                                         ///< Indicates the start angle of the scan (This is useful for partial scans)
-    } __attribute__((packed)) sick_lms_scan_profile_b7_t;
+    } sick_lms_scan_profile_b7_t;
     
     /*!
      * \struct sick_lms_scan_profile_bf_tag
@@ -489,7 +489,7 @@ namespace SickToolbox {
       uint8_t sick_sample_size;                                                ///< Number of scans used in computing the returned mean
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
-    } __attribute__((packed)) sick_lms_scan_profile_bf_t;
+    } sick_lms_scan_profile_bf_t;
     
     /*!
      * \struct sick_lms_scan_profile_c4_tag
@@ -513,7 +513,7 @@ namespace SickToolbox {
       uint8_t sick_field_c_values[SICK_MAX_NUM_MEASUREMENTS];                  ///< Reflects the Field C (or dazzle - depending upon sensor mode) value returned w/ range measurement
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
-    } __attribute__((packed)) sick_lms_scan_profile_c4_t;
+    } sick_lms_scan_profile_c4_t;
     
     /** Constructor */
     SickLMS( const std::string sick_device_path );
