@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
   
 AC_PREREQ(2.50)
-AC_INIT(SickToolbox,1.0-beta,derenick@lehigh.edu)
+AC_INIT(SickToolbox,1.0,derenick@lehigh.edu)
 AC_CONFIG_SRCDIR([c++/drivers/base/src/SickConfig.hh.in])
 AC_CONFIG_AUX_DIR(misc)
 AM_INIT_AUTOMAKE

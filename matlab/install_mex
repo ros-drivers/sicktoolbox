@@ -90,7 +90,7 @@ if [ -e $INSTALL_DIR ]; then
   # Finish the installation!
   if [ $INSTALL_FILES = 'Y' -o $INSTALL_FILES = 'y' ]; then
 
-    rm -r "$INSTALL_DIR" 2>/dev/null;
+    rm -r "$INSTALL_DIR";
     if [ ! $? -eq 0 ]; then
       echo "$0: Failed to remove old directory! Possibly a permissions problem."
       exit;

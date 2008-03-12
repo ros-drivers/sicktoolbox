@@ -73,7 +73,7 @@ if [ $BUILD_TYPE = "clean" ]; then
 
   echo "Cleaning up..."
   if [ -e ./$BUILD_DIR ]; then
-    rm -R ./$BUILD_DIR;
+    rm -r ./$BUILD_DIR;
   fi
   echo "       Done cleaning!"
 
