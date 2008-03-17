@@ -98,7 +98,7 @@ namespace SickToolbox {
       
       /* Verify the checksum is correct (this is probably unnecessary since we are using TCP/IP) */
       if (sick_message.GetChecksum() != checksum) {
-	throw SickBadChecksumException("SickLD::GetNextMessageInQueue: BAD CHECKSUM!!!");
+	throw SickBadChecksumException("SickLD::GetNextMessageFromDataStream: BAD CHECKSUM!!!");
       }
       
       /* Success */
@@ -110,18 +110,15 @@ namespace SickToolbox {
     /* Catch a bad checksum! */
     catch(SickBadChecksumException &sick_checksum_exception) {
       sick_message.Clear(); // Clear the message container
-      std::cerr << sick_checksum_exception.what() << std::endl;
     }
     
     /* Catch any serious IO buffer exceptions */
     catch(SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
       throw;
     }
 
     /* A sanity check */
     catch (...) {
-      std::cerr << "SickLMSBufferMonitor::_getNextMessageFromByteStream: Unknown exception!" << std::endl;
       throw;
     }
     
