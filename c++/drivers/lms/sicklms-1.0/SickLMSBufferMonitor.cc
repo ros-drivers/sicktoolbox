@@ -51,7 +51,7 @@ namespace SickToolbox {
 
       /* Drain the I/O buffers! */
       if (tcdrain(_sick_fd) != 0) {
-     	throw SickIOException("SickLMS::_getNextMessageFromDataStream: tcdrain failed!");
+     	throw SickIOException("SickLMSBufferMonitor::GetNextMessageFromDataStream: tcdrain failed!");
       }
 
       /* Read until we get a valid message header */
@@ -99,7 +99,7 @@ namespace SickToolbox {
 	
 	/* See if the checksums match */
 	if(sick_message.GetChecksum() != checksum) {
-	  throw SickBadChecksumException("SickLMS::_getNextMessageFromDataStream: CRC16 failed!");
+	  throw SickBadChecksumException("SickLMS::GetNextMessageFromDataStream: CRC16 failed!");
 	}
 
       }
@@ -108,22 +108,19 @@ namespace SickToolbox {
     
     catch(SickTimeoutException &sick_timeout_exception) { /* This is ok! */ }
     
-    /* Catch a bad checksum! */
+    /* Handle a bad checksum! */
     catch(SickBadChecksumException &sick_checksum_exception) {
       sick_message.Clear(); // Clear the message container
-      std::cerr << sick_checksum_exception.what() << std::endl;
     }
     
-    /* Catch any serious IO exceptions */
+    /* Handle any serious IO exceptions */
     catch(SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
-      throw;
+      throw; 
     }
 
     /* A sanity check */
-    catch (...) {
-      std::cerr << "SickLMSBufferMonitor::_getNextMessageFromByteStream: Unknown exception!" << std::endl;
-      throw;
+    catch (...) { 
+      throw; 
     }
     
   }
