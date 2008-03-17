@@ -4,7 +4,7 @@
 %  The Sick LIDAR Matlab/C++ Toolbox
 %
 %  File: sicklms.m
-%  Auth: Thomas Miller and Jason Derenick at Lehigh University
+%  Auth: Jason C. Derenick and Thomas H. Miller
 %  Cont: derenick(at)lehigh(dot)edu
 %  Date: 11 January 2008
 %
