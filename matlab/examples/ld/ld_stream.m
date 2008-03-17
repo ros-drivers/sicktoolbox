@@ -5,7 +5,7 @@ function ld_stream(sick_ip_addr,stream_type)
 %  The Sick LIDAR Matlab/C++ Toolbox
 %
 %  File: ld_stream.m
-%  Auth: Jason Derenick and Thomas Miller at Lehigh University
+%  Auth: Jason C. Derenick and Thomas H. Miller
 %  Cont: derenick(at)lehigh(dot)edu
 %  Date: 10 December 2007
 %

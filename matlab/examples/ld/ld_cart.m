@@ -5,7 +5,7 @@ function ld_cart(sick_ip_addr)
 %  The Sick LIDAR Matlab/C++ Toolbox
 %
 %  File: ld_cart.m
-%  Auth: Jason Derenick and Thomas Miller at Lehigh University
+%  Auth: Jason C. Derenick and Thomas H. Miller
 %  Cont: derenick(at)lehigh(dot)edu
 %  Date: 10 December 2007
 %
