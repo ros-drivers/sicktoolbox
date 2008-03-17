@@ -190,5 +190,5 @@ chmod -R 755 ./$BUILD_DIR;
 echo "       Permissions set!"
 
 echo
-echo "*** To INSTALL run install_toolbox :o) ***";
+echo "*** To INSTALL run install_mex :o) ***";
 echo
