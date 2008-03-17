@@ -110,6 +110,7 @@ namespace SickToolbox {
     
     /* Catch a bad checksum! */
     catch(SickBadChecksumException &sick_checksum_exception) {
+      sick_message.Clear(); // Clear the message container
       std::cerr << sick_checksum_exception.what() << std::endl;
     }
     
