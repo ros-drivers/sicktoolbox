@@ -1676,9 +1676,9 @@ namespace SickToolbox {
       SetSickSignals();
 
       /* Attempt to cancel the buffer monitor */
-      std::cerr << "\tAttempting to cancel buffer monitor..." << std::endl;
+      std::cout << "\tAttempting to cancel buffer monitor..." << std::endl;
       _stopListening();
-      std::cerr << "\t\tBuffer monitor canceled!" << std::endl;
+      std::cout << "\t\tBuffer monitor canceled!" << std::endl;
     
       /* Attempt to close the tcp connection */
       std::cout << "\tClosing connection to Sick LD..." << std::endl;
