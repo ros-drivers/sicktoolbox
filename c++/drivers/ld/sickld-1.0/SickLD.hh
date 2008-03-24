@@ -31,9 +31,6 @@
  */
 #define SWAP_VALUES(x,y,t) (t=x,x=y,y=t);
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Definition dependencies */
 #include <string>
 #include <vector>

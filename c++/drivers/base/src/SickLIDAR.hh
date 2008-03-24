@@ -30,9 +30,6 @@
 #ifndef SICK_LIDAR
 #define SICK_LIDAR
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Definition dependencies */
 #include <new>
 #include <string>

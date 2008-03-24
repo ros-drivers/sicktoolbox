@@ -19,9 +19,6 @@
 
 #define DEFAULT_SICK_BYTE_TIMEOUT         (35000)  ///< Max allowable time between consecutive bytes
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Definition dependencies */
 #include "SickLDMessage.hh"
 #include "SickBufferMonitor.hh"

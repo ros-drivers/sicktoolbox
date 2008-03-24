@@ -16,9 +16,6 @@
 #ifndef SICK_BUFFER_MONITOR
 #define SICK_BUFFER_MONITOR
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Dependencies */
 #include <iostream>
 #include <pthread.h>

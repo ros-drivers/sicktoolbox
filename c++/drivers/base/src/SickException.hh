@@ -16,9 +16,6 @@
 #ifndef SICK_EXCEPTION
 #define SICK_EXCEPTION
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Definition dependencies */
 #include <string>
 #include <exception>

@@ -16,9 +16,6 @@
 #ifndef SICK_MESSAGE
 #define SICK_MESSAGE
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Dependencies */
 #include <arpa/inet.h>
 #include <iomanip>

@@ -15,24 +15,15 @@
 #ifndef SICK_LMS_HH
 #define SICK_LMS_HH
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Implementation dependencies */
 #include <string>
 #include <iostream>
 #include <termios.h>
 
-#include "SickConfig.hh"
 #include "SickLIDAR.hh"
 #include "SickLMSBufferMonitor.hh"
 #include "SickLMSMessage.hh"
 #include "SickException.hh"
-
-/* Define B500000 for OS X */
-#ifndef HAVE_LINUX_SERIAL_H
-#define B500000 0010005
-#endif
 
 /* Macro definitions */
 #define DEFAULT_SICK_LMS_SICK_BAUD                                       (B9600)  ///< Initial baud rate of the LMS (whatever is set in flash)

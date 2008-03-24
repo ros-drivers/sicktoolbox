@@ -16,9 +16,6 @@
 #ifndef SICK_LMS_MESSAGE_HH
 #define SICK_LMS_MESSAGE_HH
 
-/* Auto-generated header */
-#include "SickConfig.hh"
-
 /* Definition dependencies */
 #include <string.h>
 #include <netinet/in.h>   

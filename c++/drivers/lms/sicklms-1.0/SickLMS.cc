@@ -23,15 +23,17 @@
 #include <sys/ioctl.h>
 #include <signal.h>
 
-#ifdef HAVE_LINUX_SERIAL_H
-#include <linux/serial.h>
-#endif
-
 #include "SickLMS.hh"
 #include "SickLMSMessage.hh"
 #include "SickLMSBufferMonitor.hh"
 #include "SickLMSUtility.hh"
 #include "SickException.hh"
+
+#ifdef HAVE_LINUX_SERIAL_H
+#include <linux/serial.h>
+#else
+#define B500000 0010005
+#endif
 
 /* Associate the namespace */
 namespace SickToolbox {
