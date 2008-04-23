@@ -27,7 +27,7 @@ using namespace SickToolbox;
 /* Macros */
 #define ARG_BUFF_LENGTH      (256)       ///< Max length (in bytes) of valid input arg
 #define NUM_INIT_STRUCT_KEYS   (3)
-#define NUM_GRAB_STRUCT_KEYS   (4)
+#define NUM_GRAB_STRUCT_KEYS   (5)
 
 /** 
  * \fn initSick
@@ -310,10 +310,11 @@ void setSickVariant(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) 
 void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
   /* Struct field names */
-  const char *struct_keys[] = { "res",         // Angular resolution of the device
-				"fov",         // Field of view of the Sick
+  const char *struct_keys[] = { "res",
+				"fov",
                                 "range",
-                                "reflect" };
+                                "reflect",
+                                "bearing" };
   
   /* Misc. buffers */
   int dims[2] = {0,1};
@@ -323,9 +324,10 @@ void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   double scan_res = 0, scan_fov = 0;
   
   /* Declare mxArray ptrs */
+  mxArray *mx_ang_array = NULL;
   mxArray *mx_pri_array = NULL;
-  mxArray *mx_sec_array = NULL;  
-  mxArray *mx_res_scalar = NULL; 
+  mxArray *mx_sec_array = NULL;
+  mxArray *mx_res_scalar = NULL;
   mxArray *mx_fov_scalar = NULL; 
   mxArray *mx_struct_array = NULL;
   
@@ -390,7 +392,7 @@ void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   /* Setup scalars in the return struct */
   mxSetField(mx_struct_array,0,struct_keys[0],mx_res_scalar);
   mxSetField(mx_struct_array,0,struct_keys[1],mx_fov_scalar);
-  
+
   /* Allocate numeric array for scan data */
   dims[0] = num_pri_values;   
   if(!(mx_pri_array = mxCreateNumericArray(2,dims,mxDOUBLE_CLASS,mxREAL))) {
@@ -433,6 +435,20 @@ void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
   }
+
+  /* Allocate array for bearings */
+  dims[0] = num_pri_values;   
+  if(!(mx_ang_array = mxCreateNumericArray(2,dims,mxDOUBLE_CLASS,mxREAL))) {
+    mexErrMsgTxt("sicklms: Failed to create numeric array!");
+  }
+
+  /* Generate measurement bearings */
+  for(unsigned int i = 0; i < num_pri_values; i++) {
+    ((double*)mxGetPr(mx_ang_array))[i] = (180-scan_fov)/2 + i*scan_res;
+  }        
+
+  /* Return measurement bearings */
+  mxSetField(mx_struct_array,0,struct_keys[4],mx_ang_array);
     
   /* Assign the output */
   plhs[0] = mx_struct_array;

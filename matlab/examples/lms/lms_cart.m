@@ -2,12 +2,12 @@ function lms_cart(sick_dev_path,sick_baud)
 %==========================================================================
 %==========================================================================
 %
-%  The Sick LIDAR Matlab/C++ Toolbox
+%  The Sick LIDAR Matlab/C++ Toolbox (Version 1.1)
 %
 %  File: lms_cart.m
 %  Auth: Jason C. Derenick and Thomas H. Miller
 %  Cont: derenick(at)lehigh(dot)edu
-%  Date: 11 January 2008
+%  Date: 23 April 2008
 %
 %  In:   sick_dev_path  - Sick device path
 %        sick_baud_rate - Desired baud rate of comm session
@@ -79,15 +79,14 @@ while keep_running
     % NOTE: units_mm is a boolean indicating whether units are mm
     data.range = toMeters(data.range,init_res.units_mm);
     
-    % Generate angles corresponding to measurements
-    theta = (data.fov/2:-data.res:-data.fov/2)'*pi/180;
-    theta = theta(valid_indices);
+    % Get bearings associated w/ valid measurements
+    theta = data.bearing(valid_indices)*pi/180;
     
     % Convert polar to Cartesian coordinates (in Sick LMS frame)    
     [x_pos y_pos] = pol2cart(theta,data.range);
     
     % Update the plot data    
-    setPlotData(lms_plot.p_obj,y_pos,x_pos,data.reflect);            
+    setPlotData(lms_plot.p_obj,x_pos,y_pos,data.reflect);            
     drawnow; % Redraw the plot
         
 end
