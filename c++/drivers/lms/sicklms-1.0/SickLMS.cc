@@ -288,6 +288,14 @@ namespace SickToolbox {
   }
 
   /**
+   * \brief Gets the Sick LMS 2xx device path
+   * \return The device path as a std::string
+   */
+  std::string SickLMS::GetSickDevicePath( ) const {
+    return _sick_device_path;
+  }
+  
+  /**
    * \brief Gets the Sick LMS 2xx type
    * \return The device type
    */

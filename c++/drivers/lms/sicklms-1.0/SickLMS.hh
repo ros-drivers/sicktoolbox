@@ -519,7 +519,10 @@ namespace SickToolbox {
     /** Uninitializes the Sick */
     void Uninitialize( ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
 
-    /** Get the Sick LMS 2xx device type */
+    /** Gets the Sick LMS 2xx device path */
+    std::string GetSickDevicePath( ) const;
+    
+    /** Gets the Sick LMS 2xx device type */
     sick_lms_type_t GetSickType( ) const throw( SickConfigException );
 
     /** Gets the scan angle currently being used by the device */
