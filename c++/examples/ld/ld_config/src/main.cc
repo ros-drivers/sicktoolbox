@@ -24,6 +24,7 @@
 #include <iostream>
 #include <signal.h>
 #include <sickld-1.0/SickLD.hh>
+#include <stdlib.h>
 #include "ConfigFile.h"
 
 #define INVALID_OPTION_STRING        "   Invalid option!!! :o(" 

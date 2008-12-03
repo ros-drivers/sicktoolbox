@@ -18,6 +18,7 @@
 #include <sstream>
 #include <iostream>
 #include <signal.h>
+#include <stdlib.h>
 #include <sicklms-1.0/SickLMS.hh>
 
 #define INVALID_OPTION_STRING "   Invalid option!!! :o("
