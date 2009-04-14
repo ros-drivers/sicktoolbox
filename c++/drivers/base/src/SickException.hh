@@ -35,23 +35,24 @@ namespace SickToolbox {
      * \brief A standard constructor
      * \param general_str A descriptive "general" string
      */
-    SickException( const std::string general_str ) :
-      _general_str(general_str), _detailed_str("") { }
+    SickException( const std::string general_str ) { 
+      _detailed_msg = general_str;
+    }
 
     /**
      * \brief A standard constructor
      * \param general_str A descriptive "general" string
      * \param detailed_str A more detailed description
      */
-    SickException( const std::string general_str, const std::string detailed_str ) :
-      _general_str(general_str), _detailed_str(detailed_str) { }
+    SickException( const std::string general_str, const std::string detailed_str ) {
+      _detailed_msg = general_str + " " + detailed_str;
+    }
     
     /**
      * \brief From the standard exception library 
      */
     virtual const char* what( ) const throw() {
-      std::string result = _general_str + " " + _detailed_str;
-      return result.c_str();
+      return _detailed_msg.c_str();
     }
 
     /**
@@ -62,10 +63,7 @@ namespace SickToolbox {
   private:
 
     /** The string identifier */
-    std::string _general_str;
-
-    /** For each sub-class to give more details */
-    std::string _detailed_str;
+    std::string _detailed_msg;
     
   };
 
