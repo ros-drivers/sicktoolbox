@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
   
 AC_PREREQ(2.50)
-AC_INIT(SickToolbox,1.0,derenick@lehigh.edu)
+AC_INIT(SickToolbox,1.1,jasonder@seas.upenn.edu)
 AC_CONFIG_SRCDIR([c++/drivers/base/src/SickConfig.hh.in])
 AC_CONFIG_AUX_DIR(misc)
 AM_INIT_AUTOMAKE
@@ -71,29 +71,31 @@ AC_CONFIG_FILES([Makefile
                  c++/examples/ld/ld_multi_sector/src/Makefile
                  c++/examples/ld/ld_single_sector/Makefile
                  c++/examples/ld/ld_single_sector/src/Makefile
-                 c++/examples/lms/Makefile
-                 c++/examples/lms/lms_config/Makefile
-                 c++/examples/lms/lms_config/src/Makefile
-                 c++/examples/lms/lms_mean_values/Makefile
-                 c++/examples/lms/lms_mean_values/src/Makefile
-                 c++/examples/lms/lms_partial_scan/Makefile
-                 c++/examples/lms/lms_partial_scan/src/Makefile
-                 c++/examples/lms/lms_plot_values/Makefile
-                 c++/examples/lms/lms_plot_values/src/Makefile
-                 c++/examples/lms/lms_real_time_indices/Makefile
-                 c++/examples/lms/lms_real_time_indices/src/Makefile
-                 c++/examples/lms/lms_set_variant/Makefile
-                 c++/examples/lms/lms_set_variant/src/Makefile
-		 c++/examples/lms/lms_simple_app/Makefile
-                 c++/examples/lms/lms_simple_app/src/Makefile
-		 c++/examples/lms/lms_stream_range_and_reflect/Makefile
-                 c++/examples/lms/lms_stream_range_and_reflect/src/Makefile		 
-		 c++/examples/lms/lms_subrange/Makefile
-                 c++/examples/lms/lms_subrange/src/Makefile		 
+                 c++/examples/lms2xx/Makefile
+                 c++/examples/lms2xx/lms2xx_config/Makefile
+                 c++/examples/lms2xx/lms2xx_config/src/Makefile
+                 c++/examples/lms2xx/lms2xx_mean_values/Makefile
+                 c++/examples/lms2xx/lms2xx_mean_values/src/Makefile
+                 c++/examples/lms2xx/lms2xx_partial_scan/Makefile
+                 c++/examples/lms2xx/lms2xx_partial_scan/src/Makefile
+                 c++/examples/lms2xx/lms2xx_plot_values/Makefile
+                 c++/examples/lms2xx/lms2xx_plot_values/src/Makefile
+                 c++/examples/lms2xx/lms2xx_real_time_indices/Makefile
+                 c++/examples/lms2xx/lms2xx_real_time_indices/src/Makefile
+                 c++/examples/lms2xx/lms2xx_set_variant/Makefile
+                 c++/examples/lms2xx/lms2xx_set_variant/src/Makefile
+		 c++/examples/lms2xx/lms2xx_simple_app/Makefile
+                 c++/examples/lms2xx/lms2xx_simple_app/src/Makefile
+		 c++/examples/lms2xx/lms2xx_stream_range_and_reflect/Makefile
+                 c++/examples/lms2xx/lms2xx_stream_range_and_reflect/src/Makefile		 
+		 c++/examples/lms2xx/lms2xx_subrange/Makefile
+                 c++/examples/lms2xx/lms2xx_subrange/src/Makefile		 
 		 c++/drivers/Makefile
                  c++/drivers/ld/Makefile
                  c++/drivers/ld/sickld-1.0/Makefile
-                 c++/drivers/lms/Makefile
-                 c++/drivers/lms/sicklms-1.0/Makefile])
+                 c++/drivers/lms1xx/Makefile
+                 c++/drivers/lms1xx/sicklms1xx/Makefile
+		 c++/drivers/lms2xx/Makefile
+                 c++/drivers/lms2xx/sicklms2xx/Makefile])
 		 
 AC_OUTPUT
