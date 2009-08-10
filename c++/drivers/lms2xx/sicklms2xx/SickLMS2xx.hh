@@ -1,6 +1,6 @@
 /*!
- * \file SickLMS.hh
- * \brief Definition of class SickLMS.
+ * \file SickLMS2xx.hh
+ * \brief Definition of class SickLMS2xx.
  * Code by Jason C. Derenick and Thomas H. Miller.
  * Contact derenick(at)lehigh(dot)edu
  *
@@ -12,8 +12,8 @@
  * See http://sicktoolbox.sourceforge.net
  */
 
-#ifndef SICK_LMS_HH
-#define SICK_LMS_HH
+#ifndef SICK_LMS_2XX_HH
+#define SICK_LMS_2XX_HH
 
 /* Implementation dependencies */
 #include <string>
@@ -21,45 +21,46 @@
 #include <termios.h>
 
 #include "SickLIDAR.hh"
-#include "SickLMSBufferMonitor.hh"
-#include "SickLMSMessage.hh"
 #include "SickException.hh"
 
+#include "SickLMS2xxBufferMonitor.hh"
+#include "SickLMS2xxMessage.hh"
+
 /* Macro definitions */
-#define DEFAULT_SICK_LMS_SICK_BAUD                                       (B9600)  ///< Initial baud rate of the LMS (whatever is set in flash)
-#define DEFAULT_SICK_LMS_HOST_ADDRESS                                     (0x80)  ///< Client/host default serial address
-#define DEFAULT_SICK_LMS_SICK_ADDRESS                                     (0x00)  ///< Sick LMS default serial address
-#define DEFAULT_SICK_LMS_SICK_PASSWORD                                "SICK_LMS"  ///< Password for entering installation mode
-#define DEFAULT_SICK_LMS_SICK_MESSAGE_TIMEOUT                (unsigned int)(1e6)  ///< The max time to wait for a message reply (usecs)
-#define DEFAULT_SICK_LMS_SICK_SWITCH_MODE_TIMEOUT            (unsigned int)(3e6)  ///< Can take the Sick LD up to 3 seconds to reply (usecs)
-#define DEFAULT_SICK_LMS_SICK_MEAN_VALUES_MESSAGE_TIMEOUT   (unsigned int)(15e6)  ///< When using mean values, the Sick can sometimes take more than 10s to respond
-#define DEFAULT_SICK_LMS_SICK_CONFIG_MESSAGE_TIMEOUT        (unsigned int)(15e6)  ///< The sick can take some time to respond to config commands (usecs)
-#define DEFAULT_SICK_LMS_BYTE_INTERVAL                                      (55)  ///< Minimum time in microseconds between transmitted bytes
-#define DEFAULT_SICK_LMS_NUM_TRIES                                           (3)  ///< The max number of tries before giving up on a request
+#define DEFAULT_SICK_LMS_2XX_SICK_BAUD                                       (B9600)  ///< Initial baud rate of the LMS (whatever is set in flash)
+#define DEFAULT_SICK_LMS_2XX_HOST_ADDRESS                                     (0x80)  ///< Client/host default serial address
+#define DEFAULT_SICK_LMS_2XX_SICK_ADDRESS                                     (0x00)  ///< Sick LMS default serial address
+#define DEFAULT_SICK_LMS_2XX_SICK_PASSWORD                                "SICK_LMS"  ///< Password for entering installation mode
+#define DEFAULT_SICK_LMS_2XX_SICK_MESSAGE_TIMEOUT                (unsigned int)(1e6)  ///< The max time to wait for a message reply (usecs)
+#define DEFAULT_SICK_LMS_2XX_SICK_SWITCH_MODE_TIMEOUT            (unsigned int)(3e6)  ///< Can take the Sick LD up to 3 seconds to reply (usecs)
+#define DEFAULT_SICK_LMS_2XX_SICK_MEAN_VALUES_MESSAGE_TIMEOUT   (unsigned int)(15e6)  ///< When using mean values, the Sick can sometimes take more than 10s to respond
+#define DEFAULT_SICK_LMS_2XX_SICK_CONFIG_MESSAGE_TIMEOUT        (unsigned int)(15e6)  ///< The sick can take some time to respond to config commands (usecs)
+#define DEFAULT_SICK_LMS_2XX_BYTE_INTERVAL                                      (55)  ///< Minimum time in microseconds between transmitted bytes
+#define DEFAULT_SICK_LMS_2XX_NUM_TRIES                                           (3)  ///< The max number of tries before giving up on a request
     
 /* Associate the namespace */
 namespace SickToolbox {
 
   /*!
-   * \brief A general class for interfacing w/ SickLMS2xx laser range finders
+   * \brief A general class for interfacing w/ SickLMS2xx2xx laser range finders
    *
-   * This class implements the basic telegram protocol for SickLMS2xx range finders.
+   * This class implements the basic telegram protocol for SickLMS2xx2xx range finders.
    * It allows the setting of such parameters as angular resolution, fov, etc...
    */
-  class SickLMS : public SickLIDAR< SickLMSBufferMonitor, SickLMSMessage >
+  class SickLMS2xx : public SickLIDAR< SickLMS2xxBufferMonitor, SickLMS2xxMessage >
   { 
 
   public:
     
     /** Define the maximum number of measurements */
-    static const uint16_t SICK_MAX_NUM_MEASUREMENTS = 721;                          ///< Maximum number of measurements returned by the Sick LMS
+    static const uint16_t SICK_MAX_NUM_MEASUREMENTS = 721;                     ///< Maximum number of measurements returned by the Sick LMS
 
     /*!
-     * \enum sick_lms_type_t 
+     * \enum sick_lms_2xx_type_t 
      * \brief Defines the Sick LMS 2xx types.
      * This enum lists all of the supported Sick LMS models.
      */
-    enum sick_lms_type_t {
+    enum sick_lms_2xx_type_t {
       
       /* Supported 200 models */
       SICK_LMS_TYPE_200_30106,                                                 ///< Sick LMS type 200-30106
@@ -97,20 +98,20 @@ namespace SickToolbox {
     };
     
     /*!
-     * \enum sick_lms_variant_t
+     * \enum sick_lms_2xx_variant_t
      * \brief Defines the Sick LMS 2xx variant type.
      */
-    enum sick_lms_variant_t {
+    enum sick_lms_2xx_variant_t {
       SICK_LMS_VARIANT_2XX_TYPE_6 = 0x00,                                      ///< Standard LMS 2xx type 6 models
       SICK_LMS_VARIANT_SPECIAL = 0x01,                                         ///< Special models (i.e. LMS211-/221-S19/-S20
       SICK_LMS_VARIANT_UNKNOWN = 0xFF                                          ///< Unknown LMS variant
     };
 
     /*!
-     * \enum sick_lms_scan_angle_t
+     * \enum sick_lms_2xx_scan_angle_t
      * \brief Defines the scan angle for the Sick LMS 2xx.
      */
-    enum sick_lms_scan_angle_t {
+    enum sick_lms_2xx_scan_angle_t {
       SICK_SCAN_ANGLE_90 = 90,                                                 ///< Scanning angle of 90 degrees
       SICK_SCAN_ANGLE_100 = 100,                                               ///< Scanning angle of 100 degrees
       SICK_SCAN_ANGLE_180 = 180,                                               ///< Scanning angle of 180 degrees
@@ -118,10 +119,10 @@ namespace SickToolbox {
     };
     
     /*!
-     * \enum sick_lms_scan_resolution_t
+     * \enum sick_lms_2xx_scan_resolution_t
      * \brief Defines the available resolution settings for the Sick LMS 2xx.
      */
-    enum sick_lms_scan_resolution_t {
+    enum sick_lms_2xx_scan_resolution_t {
       SICK_SCAN_RESOLUTION_25 = 25,                                            ///< 0.25 degree angular resolution
       SICK_SCAN_RESOLUTION_50 = 50,                                            ///< 0.50 degree angular resolution
       SICK_SCAN_RESOLUTION_100 = 100,                                          ///< 1.00 degree angular resolution
@@ -129,20 +130,20 @@ namespace SickToolbox {
     };
 
     /*!
-     * \enum sick_lms_measuring_units_t
+     * \enum sick_lms_2xx_measuring_units_t
      * \brief Defines the available Sick LMS 2xx measured value units.
      */
-    enum sick_lms_measuring_units_t {
+    enum sick_lms_2xx_measuring_units_t {
       SICK_MEASURING_UNITS_CM = 0x00,                                          ///< Measured values are in centimeters
       SICK_MEASURING_UNITS_MM = 0x01,                                          ///< Measured values are in milimeters
       SICK_MEASURING_UNITS_UNKNOWN = 0xFF                                      ///< Unknown units
     };
 
     /*!
-     * \enum sick_lms_sensitivity_t
+     * \enum sick_lms_2xx_sensitivity_t
      * \brief Sick sensitivities. Only valid for Sick LMS 211/221/291!
      */
-    enum sick_lms_sensitivity_t {
+    enum sick_lms_2xx_sensitivity_t {
       SICK_SENSITIVITY_STANDARD = 0x00,                                        ///< Standard sensitivity: 30m @ 10% reflectivity
       SICK_SENSITIVITY_MEDIUM = 0x01,                                          ///< Medium sensitivity:   25m @ 10% reflectivity
       SICK_SENSITIVITY_LOW = 0x02,                                             ///< Low sensitivity:      20m @ 10% reflectivity
@@ -151,10 +152,10 @@ namespace SickToolbox {
     };
 
     /*!
-     * \enum sick_lms_peak_threshold_t
+     * \enum sick_lms_2xx_peak_threshold_t
      * \brief Sick peak threshold. Only valid for Sick LMS 200/220!
      */
-    enum sick_lms_peak_threshold_t {
+    enum sick_lms_2xx_peak_threshold_t {
       SICK_PEAK_THRESHOLD_DETECTION_WITH_NO_BLACK_EXTENSION = 0x00,            ///< Standard: peak threshold detection, no black extension
       SICK_PEAK_THRESHOLD_DETECTION_WITH_BLACK_EXTENSION = 0x01,               ///< Peak threshold detection, active black extension
       SICK_PEAK_THRESHOLD_NO_DETECTION_WITH_NO_BLACK_EXTENSION = 0x02,         ///< No peak threshold detection, no black extension
@@ -163,20 +164,20 @@ namespace SickToolbox {
     };
 
     /*!
-     * \enum sick_lms_status_t
+     * \enum sick_lms_2xx_status_t
      * \brief Defines the status of the Sick LMS 2xx unit.
      */
-    enum sick_lms_status_t {
+    enum sick_lms_2xx_status_t {
       SICK_STATUS_OK = 0x00,                                                   ///< LMS is OK
       SICK_STATUS_ERROR = 0x01,                                                ///< LMS has encountered an error
       SICK_STATUS_UNKNOWN = 0xFF                                               ///< Unknown LMS status
     };
     
     /*!
-     * \enum sick_lms_measuring_mode_t
+     * \enum sick_lms_2xx_measuring_mode_t
      * \brief Defines the measurment modes supported by Sick LMS 2xx.
      */
-    enum sick_lms_measuring_mode_t { 
+    enum sick_lms_2xx_measuring_mode_t { 
       SICK_MS_MODE_8_OR_80_FA_FB_DAZZLE = 0x00,                                ///< Measurement range 8m/80m; fields A,B and Dazzle (Default)
       SICK_MS_MODE_8_OR_80_REFLECTOR = 0x01,                                   ///< Measurement range 8/80m; reflector bits in 8 levels
       SICK_MS_MODE_8_OR_80_FA_FB_FC = 0x02,                                    ///< Measurement range 8/80m; fields A,B, and C
@@ -190,11 +191,11 @@ namespace SickToolbox {
     };
     
     /*!
-     * \enum sick_lms_operating_mode_t
+     * \enum sick_lms_2xx_operating_mode_t
      * \brief Defines the operating modes supported by Sick LMS 2xx. 
      * See page 41 of the LMS 2xx telegram manual for additional descriptions of these modes.
      */
-    enum sick_lms_operating_mode_t {
+    enum sick_lms_2xx_operating_mode_t {
       SICK_OP_MODE_INSTALLATION = 0x00,                                        ///< Installation mode for writing EEPROM
       SICK_OP_MODE_DIAGNOSTIC = 0x10,                                          ///< Diagnostic mode for testing purposes
       SICK_OP_MODE_MONITOR_STREAM_MIN_VALUE_FOR_EACH_SEGMENT = 0x20,           ///< Streams minimum measured values for each segement
@@ -216,10 +217,10 @@ namespace SickToolbox {
     };
 
     /*!
-     * \enum sick_lms_baud_t
+     * \enum sick_lms_2xx_baud_t
      * \brief Defines available Sick LMS 2xx baud rates
      */
-    enum sick_lms_baud_t {
+    enum sick_lms_2xx_baud_t {
       SICK_BAUD_9600 = 0x42,                                                   ///< 9600 baud
       SICK_BAUD_19200 = 0x41,                                                  ///< 19200 baud
       SICK_BAUD_38400 = 0x40,                                                  ///< 38400 baud
@@ -234,16 +235,16 @@ namespace SickToolbox {
     static const uint8_t SICK_FLAG_AVAILABILITY_DAZZLE_NO_EFFECT = 0x04;       ///< Dazzle evalutation has no effect on switching outputs
   
     /*!
-     * \struct sick_lms_operating_status_tag
+     * \struct sick_lms_2xx_operating_status_tag
      * \brief A structure for aggregating the data that
      *        collectively defines the operating status
      *        of the device.
      */
     /*!
-     * \typedef sick_lms_operating_status_t
+     * \typedef sick_lms_2xx_operating_status_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_operating_status_tag {
+    typedef struct sick_lms_2xx_operating_status_tag {
       uint16_t sick_scan_angle;                                                ///< Sick scanning angle (deg)
       uint16_t sick_scan_resolution;                                           ///< Sick angular resolution (1/100 deg)
       uint16_t sick_num_motor_revs;                                            ///< Sick number of motor revs
@@ -254,62 +255,62 @@ namespace SickToolbox {
       uint8_t sick_measuring_units;                                            ///< Sick measuring units {cm,mm}
       uint8_t sick_address;                                                    ///< Sick device address
       uint8_t sick_variant;                                                    ///< Sick variant {special,standard}
-    } sick_lms_operating_status_t;
+    } sick_lms_2xx_operating_status_t;
     
     /*!
-     * \struct sick_lms_software_status_tag
+     * \struct sick_lms_2xx_software_status_tag
      * \brief A structure for aggregating the data that
      *        collectively defines the system software
      *        for the Sick LMS 2xx unit.
      */
     /*!
-     * \typedef sick_lms_software_status_t
+     * \typedef sick_lms_2xx_software_status_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_software_status_tag {
+    typedef struct sick_lms_2xx_software_status_tag {
       uint8_t sick_system_software_version[8];                                 ///< Sick system software version
       uint8_t sick_prom_software_version[8];                                   ///< Sick boot prom software version
-    } sick_lms_software_status_t;
+    } sick_lms_2xx_software_status_t;
     
     /*!
-     * \struct sick_lms_restart_status_tag
+     * \struct sick_lms_2xx_restart_status_tag
      * \brief A structure for aggregating the data that
      *        collectively defines the system restart
      *        config for the Sick LMS 2xx unit
      */
-    typedef struct sick_lms_restart_status_tag {
+    typedef struct sick_lms_2xx_restart_status_tag {
       uint16_t sick_restart_time;                                              ///< Sick restart time  
       uint8_t sick_restart_mode;                                               ///< Sick restart mode
-    } sick_lms_restart_status_t;
+    } sick_lms_2xx_restart_status_t;
     
     /*!
-     * \struct sick_lms_pollution_status_tag
+     * \struct sick_lms_2xx_pollution_status_tag
      * \brief A structure for aggregating the data that
      *        collectively defines the pollution values
      *        and settings for the device
      */
     /*!
-     * \typedef sick_lms_pollution_status_t
+     * \typedef sick_lms_2xx_pollution_status_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_pollution_status_tag {
+    typedef struct sick_lms_2xx_pollution_status_tag {
       uint16_t sick_pollution_vals[8];                                         ///< Calibrating the pollution channels
       uint16_t sick_pollution_calibration_vals[8];                             ///< Calibrating the pollution channel values
       uint16_t sick_reference_pollution_vals[4];                               ///< Reference pollution values
       uint16_t sick_reference_pollution_calibration_vals[4];                   ///< Reference pollution calibration values
-    } sick_lms_pollution_status_t;
+    } sick_lms_2xx_pollution_status_t;
     
     /*!
-     * \struct sick_lms_signal_status_tag
+     * \struct sick_lms_2xx_signal_status_tag
      * \brief A structure for aggregating the data that
      *        collectively define the signal config and
      *        status.
      */
     /*!
-     * \typedef sick_lms_signal_status_t
+     * \typedef sick_lms_2xx_signal_status_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_signal_status_tag {
+    typedef struct sick_lms_2xx_signal_status_tag {
       uint16_t sick_reference_scale_1_dark_100;                                ///< Receive signal amplitude in ADC incs when reference signal is switched off (Signal 1, Dark 100%)
       uint16_t sick_reference_scale_2_dark_100;                                ///< Receive signal amplitude in ADC incs when reference signal is switched off (Signal 2, Dark 100%)
       uint16_t sick_reference_scale_1_dark_66;                                 ///< Receive signal amplitude in ADC incs when reference signal is switched off (Signal 1, Dark 66%)
@@ -325,48 +326,48 @@ namespace SickToolbox {
       uint16_t sick_peak_threshold_actual_value;                               ///< Actual value of the peak threshold in ADC incs
       uint16_t sick_reference_target_single_measured_vals;                     ///< Reference target "single measured values." Low byte: Current number of filtered single measured values. High byte: Max num filtered single measured value since power-on. 
       uint16_t sick_reference_target_mean_measured_vals;                       ///< Reference target "mean measured values." Low byte: Current number of filtered mean measured values. High byte: Max num filtered mean measured value since power-on. 
-    } sick_lms_signal_status_t;
+    } sick_lms_2xx_signal_status_t;
     
     /*!
-     * \struct sick_lms_field_status_tag
+     * \struct sick_lms_2xx_field_status_tag
      * \brief A structure for aggregating the data that
      *        collectively define the signal config and
      *        status.
      */
     /*!
-     * \typedef sick_lms_field_status_t
+     * \typedef sick_lms_2xx_field_status_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_field_status_tag {
+    typedef struct sick_lms_2xx_field_status_tag {
       uint8_t sick_field_evaluation_number;                                    ///< Number of evaluations when the field is infirnged (lies in [1,125])
       uint8_t sick_field_set_number;                                           ///< Active field set number
       uint8_t sick_multiple_evaluation_offset_field_2;                         ///< Offset for multiple evaluation of field set 2 (see page 105 of telegram listing)
-    } sick_lms_field_status_t;
+    } sick_lms_2xx_field_status_t;
     
     /*!
-     * \struct sick_lms_baud_status_tag
+     * \struct sick_lms_2xx_baud_status_tag
      * \brief A structure for aggregating the data that
      *        collectively define the baud config.
      */
     /*!
-     * \typedef sick_lms_baud_status_t
+     * \typedef sick_lms_2xx_baud_status_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_baud_status_tag {
+    typedef struct sick_lms_2xx_baud_status_tag {
       uint16_t sick_baud_rate;                                                 ///< Sick baud as reported by the device 
       uint8_t sick_permanent_baud_rate;                                        ///< 0 - When power is switched on baud rate is 9600/1 - configured transmission rate is used                                   
-    } sick_lms_baud_status_t;
+    } sick_lms_2xx_baud_status_t;
     
     /*!
-     * \struct sick_lms_device_config_tag
+     * \struct sick_lms_2xx_device_config_tag
      * \brief A structure for aggregating the data that
      *        collectively defines the Sick's config.
      */
     /*!
-     * \typedef sick_lms_device_config_t
+     * \typedef sick_lms_2xx_device_config_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_device_config_tag {
+    typedef struct sick_lms_2xx_device_config_tag {
       uint16_t sick_blanking;                                                  ///< Maximum diameter of objects that are not to be detected (units cm)                
       uint16_t sick_fields_b_c_restart_times;                                  ///< Restart times for fields B and C
       uint16_t sick_dazzling_multiple_evaluation;                              ///< Number of scans that take place before LMS switches the outputs (only applies to availability level 1)
@@ -398,19 +399,19 @@ namespace SickToolbox {
       uint8_t sick_contour_c_stop_angle;                                       ///< When contour function is active the stop angle of area to be monitored is defined (deg)
       uint8_t sick_pixel_oriented_evaluation;                                  ///< Pixel oriented evaluation
       uint8_t sick_single_measured_value_evaluation_mode;                      ///< Multiple evaluation (min: 1, max: 125)
-    } sick_lms_device_config_t;
+    } sick_lms_2xx_device_config_t;
     
     /*!
-     * \struct sick_lms_scan_profile_b0_tag
+     * \struct sick_lms_2xx_scan_profile_b0_tag
      * \brief A structure for aggregating the data that
      *        define a scan profile obtained from reply
      *        B0 (See page 49 Telegram listing)
      */
     /*!
-     * \typedef sick_lms_scan_profile_b0_t
+     * \typedef sick_lms_2xx_scan_profile_b0_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_scan_profile_b0_tag {
+    typedef struct sick_lms_2xx_scan_profile_b0_tag {
       uint16_t sick_num_measurements;                                          ///< Number of measurements
       uint16_t sick_measurements[SICK_MAX_NUM_MEASUREMENTS];                   ///< Range/reflectivity measurement buffer
       uint8_t sick_field_a_values[SICK_MAX_NUM_MEASUREMENTS];                  ///< Reflects the Field A bit value returned w/ range measurement
@@ -419,37 +420,37 @@ namespace SickToolbox {
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
       uint8_t sick_partial_scan_index;                                         ///< Indicates the start angle of the scan (This is useful for partial scans)
-    } sick_lms_scan_profile_b0_t;
+    } sick_lms_2xx_scan_profile_b0_t;
     
     /*!
-     * \struct sick_lms_scan_profile_b6_tag
+     * \struct sick_lms_2xx_scan_profile_b6_tag
      * \brief A structure for aggregating the data that
      *        define a scan profile obtained from reply
      *        B6 (See page 61 Telegram listing)
      */
     /*!
-     * \typedef sick_lms_scan_profile_b6_t
+     * \typedef sick_lms_2xx_scan_profile_b6_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_scan_profile_b6_tag {
+    typedef struct sick_lms_2xx_scan_profile_b6_tag {
       uint16_t sick_num_measurements;                                          ///< Number of measurements
       uint16_t sick_measurements[SICK_MAX_NUM_MEASUREMENTS];                   ///< Range/reflectivity measurement buffer
       uint8_t sick_sample_size;                                                ///< Number of scans used in computing the returned mean
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
-    } sick_lms_scan_profile_b6_t;
+    } sick_lms_2xx_scan_profile_b6_t;
     
     /*!
-     * \struct sick_lms_scan_profile_b7_tag
+     * \struct sick_lms_2xx_scan_profile_b7_tag
      * \brief A structure for aggregating the data that
      *        define a scan profile obtained from reply
      *        B7 (See page 63 Telegram listing)
      */
     /*!
-     * \typedef sick_lms_scan_profile_b7_t
+     * \typedef sick_lms_2xx_scan_profile_b7_t
      * \brief Adopt c-style convention
      */  
-    typedef struct sick_lms_scan_profile_b7_tag {
+    typedef struct sick_lms_2xx_scan_profile_b7_tag {
       uint16_t sick_subrange_start_index;                                      ///< Measurement subrange start index
       uint16_t sick_subrange_stop_index;                                       ///< Measurement subrange stop index
       uint16_t sick_num_measurements;                                          ///< Number of measurements
@@ -460,19 +461,19 @@ namespace SickToolbox {
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
       uint8_t sick_partial_scan_index;                                         ///< Indicates the start angle of the scan (This is useful for partial scans)
-    } sick_lms_scan_profile_b7_t;
+    } sick_lms_2xx_scan_profile_b7_t;
     
     /*!
-     * \struct sick_lms_scan_profile_bf_tag
+     * \struct sick_lms_2xx_scan_profile_bf_tag
      * \brief A structure for aggregating the data that
      *        define a scan profile obtained from reply
      *        BF (See page 71 Telegram listing)
      */
     /*!
-     * \typedef sick_lms_scan_profile_bf_t
+     * \typedef sick_lms_2xx_scan_profile_bf_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_scan_profile_bf_tag {
+    typedef struct sick_lms_2xx_scan_profile_bf_tag {
       uint16_t sick_subrange_start_index;                                      ///< Measurement subrange start index
       uint16_t sick_subrange_stop_index;                                       ///< Measurement subrange stop index
       uint16_t sick_num_measurements;                                          ///< Number of measurements
@@ -480,19 +481,19 @@ namespace SickToolbox {
       uint8_t sick_sample_size;                                                ///< Number of scans used in computing the returned mean
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
-    } sick_lms_scan_profile_bf_t;
+    } sick_lms_2xx_scan_profile_bf_t;
     
     /*!
-     * \struct sick_lms_scan_profile_c4_tag
+     * \struct sick_lms_2xx_scan_profile_c4_tag
      * \brief A structure for aggregating the data that
      *        define a scan profile obtained from reply
      *        B4 (See page 79 Telegram listing)
      */
     /*!
-     * \typedef sick_lms_scan_profile_c4_t
+     * \typedef sick_lms_2xx_scan_profile_c4_t
      * \brief Adopt c-style convention
      */
-    typedef struct sick_lms_scan_profile_c4_tag {
+    typedef struct sick_lms_2xx_scan_profile_c4_tag {
       uint16_t sick_num_range_measurements;                                    ///< Number of range measurements
       uint16_t sick_num_reflect_measurements;                                  ///< Number of reflectivity measurements
       uint16_t sick_range_measurements[SICK_MAX_NUM_MEASUREMENTS];             ///< Range measurement buffer
@@ -504,16 +505,16 @@ namespace SickToolbox {
       uint8_t sick_field_c_values[SICK_MAX_NUM_MEASUREMENTS];                  ///< Reflects the Field C (or dazzle - depending upon sensor mode) value returned w/ range measurement
       uint8_t sick_telegram_index;                                             ///< Telegram index modulo 256
       uint8_t sick_real_time_scan_index;                                       ///< If real-time scan indices are requested, this value is set (modulo 256)
-    } sick_lms_scan_profile_c4_t;
+    } sick_lms_2xx_scan_profile_c4_t;
     
     /** Constructor */
-    SickLMS( const std::string sick_device_path );
+    SickLMS2xx( const std::string sick_device_path );
     
     /** Destructor */
-    ~SickLMS( );
+    ~SickLMS2xx( );
     
     /** Initializes the Sick */
-    void Initialize( const sick_lms_baud_t desired_baud_rate )
+    void Initialize( const sick_lms_2xx_baud_t desired_baud_rate )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException);
 
     /** Uninitializes the Sick */
@@ -523,7 +524,7 @@ namespace SickToolbox {
     std::string GetSickDevicePath( ) const;
     
     /** Gets the Sick LMS 2xx device type */
-    sick_lms_type_t GetSickType( ) const throw( SickConfigException );
+    sick_lms_2xx_type_t GetSickType( ) const throw( SickConfigException );
 
     /** Gets the scan angle currently being used by the device */
     double GetSickScanAngle( ) const throw( SickConfigException );
@@ -532,35 +533,35 @@ namespace SickToolbox {
     double GetSickScanResolution( ) const throw( SickConfigException );
 
     /** Set the measurement units of the device (in EEPROM) */
-    void SetSickMeasuringUnits( const sick_lms_measuring_units_t sick_units = SICK_MEASURING_UNITS_MM )
+    void SetSickMeasuringUnits( const sick_lms_2xx_measuring_units_t sick_units = SICK_MEASURING_UNITS_MM )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
 
     /** Get the current measurement units of the device */
-    SickLMS::sick_lms_measuring_units_t GetSickMeasuringUnits( ) const throw( SickConfigException );
+    SickLMS2xx::sick_lms_2xx_measuring_units_t GetSickMeasuringUnits( ) const throw( SickConfigException );
     
     /** Sets the sensitivity value for the device (in EEPROM). NOTE: Only applies to LMS 211/221/291 models. */
-    void SetSickSensitivity( const sick_lms_sensitivity_t sick_sensitivity = SICK_SENSITIVITY_STANDARD )
+    void SetSickSensitivity( const sick_lms_2xx_sensitivity_t sick_sensitivity = SICK_SENSITIVITY_STANDARD )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
 
     /** Get the current Sick LMS 2xx sensitivity level. NOTE: Only applies to LMS 211/221/291 models. */
-    sick_lms_sensitivity_t GetSickSensitivity( ) const throw( SickConfigException );
+    sick_lms_2xx_sensitivity_t GetSickSensitivity( ) const throw( SickConfigException );
 
     /** Sets the peak threshold mode for the device (in EEPROM). NOTE: Only applies to LMS 200/220 models */
-    void SetSickPeakThreshold( const sick_lms_peak_threshold_t sick_peak_threshold = SICK_PEAK_THRESHOLD_DETECTION_WITH_NO_BLACK_EXTENSION )
+    void SetSickPeakThreshold( const sick_lms_2xx_peak_threshold_t sick_peak_threshold = SICK_PEAK_THRESHOLD_DETECTION_WITH_NO_BLACK_EXTENSION )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
     
     /** Get the current Sick LMS 2xx sensitivity level. NOTE: Only applies to LMS 211/221/291 models. */
-    sick_lms_peak_threshold_t GetSickPeakThreshold( ) const throw( SickConfigException );;
+    sick_lms_2xx_peak_threshold_t GetSickPeakThreshold( ) const throw( SickConfigException );;
     
     /** Sets the measuring mode for the device (in EEPROM). See page 98 of the telegram listing for more details. */
-    void SetSickMeasuringMode( const sick_lms_measuring_mode_t sick_measuring_mode = SICK_MS_MODE_8_OR_80_FA_FB_DAZZLE )
+    void SetSickMeasuringMode( const sick_lms_2xx_measuring_mode_t sick_measuring_mode = SICK_MS_MODE_8_OR_80_FA_FB_DAZZLE )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
 
     /** Get the current Sick LMS 2xx measuring mode */
-    sick_lms_measuring_mode_t GetSickMeasuringMode( ) const throw( SickConfigException );
+    sick_lms_2xx_measuring_mode_t GetSickMeasuringMode( ) const throw( SickConfigException );
 
     /** Get the current Sick LMS 2xx operating mode */
-    sick_lms_operating_mode_t GetSickOperatingMode( ) const throw( SickConfigException );
+    sick_lms_2xx_operating_mode_t GetSickOperatingMode( ) const throw( SickConfigException );
     
     /** Sets the availability of the device (in EEPROM). See page 98 of the telegram listing for more details. */
     void SetSickAvailability( const uint8_t sick_availability_flags = SICK_FLAG_AVAILABILITY_DEFAULT )
@@ -570,7 +571,7 @@ namespace SickToolbox {
     uint8_t GetSickAvailability( ) const throw( SickConfigException );
     
     /** Sets the variant type for the device (in EEPROM) */
-    void SetSickVariant( const sick_lms_scan_angle_t scan_angle, const sick_lms_scan_resolution_t scan_resolution )
+    void SetSickVariant( const sick_lms_2xx_scan_angle_t scan_angle, const sick_lms_2xx_scan_resolution_t scan_resolution )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException);
 
     /** Gets measurement data from the Sick. NOTE: Data can be either range or reflectivity given the Sick mode. */
@@ -631,10 +632,10 @@ namespace SickToolbox {
 				    unsigned int * const sick_real_time_index = NULL ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
 
     /** Acquire the Sick LMS status */
-    sick_lms_status_t GetSickStatus( ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
+    sick_lms_2xx_status_t GetSickStatus( ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
 
     /** Indicates whether the Sick is an LMS Fast */
-    bool IsSickLMSFast( ) const throw( SickConfigException );
+    bool IsSickLMS2xxFast( ) const throw( SickConfigException );
     
     /** Resets Sick LMS field values */
     void ResetSick( ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
@@ -663,43 +664,43 @@ namespace SickToolbox {
      */
 
     /** Converts the LMS's type to a corresponding string */
-    static std::string SickTypeToString( const sick_lms_type_t sick_type );
+    static std::string SickTypeToString( const sick_lms_2xx_type_t sick_type );
 
     /** A utility function for converting integers to lms_sick_scan_angle_t */
-    static sick_lms_scan_angle_t IntToSickScanAngle( const int scan_angle_int );
+    static sick_lms_2xx_scan_angle_t IntToSickScanAngle( const int scan_angle_int );
 
     /** A utility function for converting ints to lms_sick_scan_resolution_t */
-    static sick_lms_scan_resolution_t IntToSickScanResolution( const int scan_resolution_int );
+    static sick_lms_2xx_scan_resolution_t IntToSickScanResolution( const int scan_resolution_int );
     
     /** A utility function for converting doubles to lms_sick_scan_resolution_t */
-    static sick_lms_scan_resolution_t DoubleToSickScanResolution( const double scan_resolution_double );
+    static sick_lms_2xx_scan_resolution_t DoubleToSickScanResolution( const double scan_resolution_double );
     
     /** Converts the given bad, returns a string representing that baud rate. */
-    static std::string SickBaudToString( const sick_lms_baud_t baud_rate );
+    static std::string SickBaudToString( const sick_lms_2xx_baud_t baud_rate );
 
     /** A utility function for converting integers to lms_baud_t */
-    static sick_lms_baud_t IntToSickBaud( const int baud_int );
+    static sick_lms_2xx_baud_t IntToSickBaud( const int baud_int );
     
     /** A utility function for converting baud strings to lms_baud_t */
-    static sick_lms_baud_t StringToSickBaud( const std::string baud_str );
+    static sick_lms_2xx_baud_t StringToSickBaud( const std::string baud_str );
 
     /** Converts the LMS's status to a corresponding string */
-    static std::string SickStatusToString( const sick_lms_status_t sick_status );
+    static std::string SickStatusToString( const sick_lms_2xx_status_t sick_status );
     
     /** Converts the LMS's measuring mode to a corresponding string */
-    static std::string SickMeasuringModeToString( const sick_lms_measuring_mode_t sick_measuring_mode );
+    static std::string SickMeasuringModeToString( const sick_lms_2xx_measuring_mode_t sick_measuring_mode );
 
     /** Converts the LMS's measuring mode to a corresponding string */
-    static std::string SickOperatingModeToString( const sick_lms_operating_mode_t sick_operating_mode );
+    static std::string SickOperatingModeToString( const sick_lms_2xx_operating_mode_t sick_operating_mode );
     
     /** Converts the LMS's sensitivity to string */
-    static std::string SickSensitivityToString( const sick_lms_sensitivity_t sick_sensitivity );
+    static std::string SickSensitivityToString( const sick_lms_2xx_sensitivity_t sick_sensitivity );
 
     /** Converts the LMS's peak threshold to string */
-    static std::string SickPeakThresholdToString( const sick_lms_peak_threshold_t sick_peak_threshold );
+    static std::string SickPeakThresholdToString( const sick_lms_2xx_peak_threshold_t sick_peak_threshold );
     
     /** Converts the LMS's measuring units to a corresponding string */
-    static std::string SickMeasuringUnitsToString( const sick_lms_measuring_units_t sick_units );    
+    static std::string SickMeasuringUnitsToString( const sick_lms_2xx_measuring_units_t sick_units );    
 
   protected:
 
@@ -707,37 +708,37 @@ namespace SickToolbox {
     std::string _sick_device_path;
 
     /** The baud rate at which to communicate with the Sick */
-    sick_lms_baud_t _curr_session_baud;
+    sick_lms_2xx_baud_t _curr_session_baud;
 
     /** The desired baud rate for communicating w/ the Sick */
-    sick_lms_baud_t _desired_session_baud;
+    sick_lms_2xx_baud_t _desired_session_baud;
     
     /** A string representing the type of device */
-    sick_lms_type_t _sick_type;
+    sick_lms_2xx_type_t _sick_type;
 
     /** The operating parameters of the device */
-    sick_lms_operating_status_t _sick_operating_status;
+    sick_lms_2xx_operating_status_t _sick_operating_status;
 
     /** The current software version being run on the device */
-    sick_lms_software_status_t _sick_software_status;
+    sick_lms_2xx_software_status_t _sick_software_status;
 
     /** The restart configuration of the device */
-    sick_lms_restart_status_t _sick_restart_status;
+    sick_lms_2xx_restart_status_t _sick_restart_status;
 
     /** The pollution measurement status */
-    sick_lms_pollution_status_t _sick_pollution_status;
+    sick_lms_2xx_pollution_status_t _sick_pollution_status;
 
     /** The signal status of the device */
-    sick_lms_signal_status_t _sick_signal_status;
+    sick_lms_2xx_signal_status_t _sick_signal_status;
 
     /** The field configuration for the device */
-    sick_lms_field_status_t _sick_field_status;
+    sick_lms_2xx_field_status_t _sick_field_status;
 
     /** The baud configuration of the device */
-    sick_lms_baud_status_t _sick_baud_status;
+    sick_lms_2xx_baud_status_t _sick_baud_status;
 
     /** The device configuration for the Sick */
-    sick_lms_device_config_t _sick_device_config;
+    sick_lms_2xx_device_config_t _sick_device_config;
 
     /** Used when the device is streaming mean values */
     uint8_t _sick_mean_value_sample_size;
@@ -758,14 +759,14 @@ namespace SickToolbox {
     void _teardownConnection( ) throw( SickIOException );
 
     /** Sends a message to the LMS and get the expected reply using th 0x80 rule.   @todo Check difference in comments? */
-    void _sendMessageAndGetReply( const SickLMSMessage &sick_send_message,
-				  SickLMSMessage &sick_recv_message,
+    void _sendMessageAndGetReply( const SickLMS2xxMessage &sick_send_message,
+				  SickLMS2xxMessage &sick_recv_message,
 				  const unsigned int timeout_value,
 				  const unsigned int num_tries ) throw( SickIOException, SickThreadException, SickTimeoutException ); 
 
     /** Sends a message to the LMS and get the expected reply using th 0x80 rule. @todo Check difference in comments? */
-    void _sendMessageAndGetReply( const SickLMSMessage &sick_send_message,
-				  SickLMSMessage &sick_recv_message,
+    void _sendMessageAndGetReply( const SickLMS2xxMessage &sick_send_message,
+				  SickLMS2xxMessage &sick_recv_message,
 				  const uint8_t reply_code,
 				  const unsigned int timeout_value,
 				  const unsigned int num_tries ) throw( SickIOException, SickThreadException, SickTimeoutException ); 
@@ -774,13 +775,13 @@ namespace SickToolbox {
     void _flushTerminalBuffer( ) throw ( SickThreadException );
     
     /** Sets the baud rate for communication with the LMS. */
-    void _setSessionBaud( const sick_lms_baud_t baud_rate ) throw( SickIOException, SickThreadException, SickTimeoutException );
+    void _setSessionBaud( const sick_lms_2xx_baud_t baud_rate ) throw( SickIOException, SickThreadException, SickTimeoutException );
 
     /** Tests communication wit the LMS at a particular baud rate. */
-    bool _testSickBaud( const sick_lms_baud_t baud_rate ) throw( SickIOException, SickThreadException );
+    bool _testSickBaud( const sick_lms_2xx_baud_t baud_rate ) throw( SickIOException, SickThreadException );
 
     /** Changes the terminal's baud rate. */
-    void _setTerminalBaud( const sick_lms_baud_t sick_baud ) throw( SickIOException, SickThreadException );
+    void _setTerminalBaud( const sick_lms_2xx_baud_t sick_baud ) throw( SickIOException, SickThreadException );
 
     /** Gets the type of Sick LMS */
     void _getSickType( ) throw( SickTimeoutException, SickIOException, SickThreadException );
@@ -789,7 +790,7 @@ namespace SickToolbox {
     void _getSickConfig( ) throw( SickTimeoutException, SickIOException, SickThreadException );
 
     /** Sets the Sick configuration in flash */
-    void _setSickConfig( const sick_lms_device_config_t &sick_config ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
+    void _setSickConfig( const sick_lms_2xx_device_config_t &sick_config ) throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException );
     
     /** Gets the status of the LMS */
     void _getSickStatus( ) throw( SickTimeoutException, SickIOException, SickThreadException );
@@ -840,22 +841,22 @@ namespace SickToolbox {
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException);
     
     /** Parses the scan profile returned w/ message B0 */
-    void _parseSickScanProfileB0( const uint8_t * const src_buffer, sick_lms_scan_profile_b0_t &sick_scan_profile ) const;
+    void _parseSickScanProfileB0( const uint8_t * const src_buffer, sick_lms_2xx_scan_profile_b0_t &sick_scan_profile ) const;
 
     /** Parses the scan profile returned w/ message B6 */
-    void _parseSickScanProfileB6( const uint8_t * const src_buffer, sick_lms_scan_profile_b6_t &sick_scan_profile ) const;
+    void _parseSickScanProfileB6( const uint8_t * const src_buffer, sick_lms_2xx_scan_profile_b6_t &sick_scan_profile ) const;
 
     /** Parses the scan profile returned w/ message B6 */
-    void _parseSickScanProfileB7( const uint8_t * const src_buffer, sick_lms_scan_profile_b7_t &sick_scan_profile ) const;
+    void _parseSickScanProfileB7( const uint8_t * const src_buffer, sick_lms_2xx_scan_profile_b7_t &sick_scan_profile ) const;
 
     /** Parses the scan profile returned w/ message BF */
-    void _parseSickScanProfileBF( const uint8_t * const src_buffer, sick_lms_scan_profile_bf_t &sick_scan_profile ) const;
+    void _parseSickScanProfileBF( const uint8_t * const src_buffer, sick_lms_2xx_scan_profile_bf_t &sick_scan_profile ) const;
     
     /** Parses the scan profile returned w/ message C4 */
-    void _parseSickScanProfileC4( const uint8_t * const src_buffer, sick_lms_scan_profile_c4_t &sick_scan_profile ) const;
+    void _parseSickScanProfileC4( const uint8_t * const src_buffer, sick_lms_2xx_scan_profile_c4_t &sick_scan_profile ) const;
 
     /** A function for parsing a byte sequence into a device config structure */
-    void _parseSickConfigProfile( const uint8_t * const src_buffer, sick_lms_device_config_t &sick_device_config ) const;
+    void _parseSickConfigProfile( const uint8_t * const src_buffer, sick_lms_2xx_device_config_t &sick_device_config ) const;
 
     /** Acquires the bit mask to extract the field bit values returned with each range measurement */
     void _extractSickMeasurementValues( const uint8_t * const byte_sequence, const uint16_t num_measurements, uint16_t * const measured_values,
@@ -865,22 +866,22 @@ namespace SickToolbox {
     bool _returningRealTimeIndices( ) const { return _sick_device_config.sick_availability_level & SICK_FLAG_AVAILABILITY_REAL_TIME_INDICES; }
 
     /** Indicates whether the given unit value is defined */
-    bool _validSickMeasuringUnits( const sick_lms_measuring_units_t sick_units ) const;
+    bool _validSickMeasuringUnits( const sick_lms_2xx_measuring_units_t sick_units ) const;
 
     /** Indicates whether the given scan angle is defined */
-    bool _validSickScanAngle( const sick_lms_scan_angle_t sick_scan_angle ) const;
+    bool _validSickScanAngle( const sick_lms_2xx_scan_angle_t sick_scan_angle ) const;
 
     /** Indicates whether the given scan resolution is defined */
-    bool _validSickScanResolution( const sick_lms_scan_resolution_t sick_scan_resolution ) const;
+    bool _validSickScanResolution( const sick_lms_2xx_scan_resolution_t sick_scan_resolution ) const;
 
     /** Indicates whether the given sensitivity is defined */
-    bool _validSickSensitivity( const sick_lms_sensitivity_t sick_sensitivity ) const;
+    bool _validSickSensitivity( const sick_lms_2xx_sensitivity_t sick_sensitivity ) const;
 
     /** Indicates whether the given peak threshold is defined */
-    bool _validSickPeakThreshold( const sick_lms_peak_threshold_t sick_peak_threshold ) const;
+    bool _validSickPeakThreshold( const sick_lms_2xx_peak_threshold_t sick_peak_threshold ) const;
     
     /** Indicates whether the given sensitivity is defined */
-    bool _validSickMeasuringMode( const sick_lms_measuring_mode_t sick_measuring_mode ) const;
+    bool _validSickMeasuringMode( const sick_lms_2xx_measuring_mode_t sick_measuring_mode ) const;
 
     /** Indicates whether the Sick LMS is type 200 */
     bool _isSickLMS200( ) const;
@@ -901,7 +902,7 @@ namespace SickToolbox {
     bool _isSickUnknown( ) const;
     
     /** Given a baud rate as an integer, gets a LMS baud rate command. */
-    sick_lms_baud_t _baudToSickBaud( const int baud_rate ) const;
+    sick_lms_2xx_baud_t _baudToSickBaud( const int baud_rate ) const;
 
     /** Given a bytecode representing Sick LMS availability, returns a corresponding string */
     std::string _sickAvailabilityToString( const uint8_t availability_code ) const;
@@ -924,71 +925,71 @@ namespace SickToolbox {
   };
 
   /*!
-   * \typedef sick_lms_type_t
-   * \brief Makes working w/ SickLMS::sick_lms_type_t a bit easier
+   * \typedef sick_lms_2xx_type_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_type_t a bit easier
    */
-  typedef SickLMS::sick_lms_type_t sick_lms_type_t;
+  typedef SickLMS2xx::sick_lms_2xx_type_t sick_lms_2xx_type_t;
 
   /*!
-   * \typedef sick_lms_variant_t
-   * \brief Makes working w/ SickLMS::sick_lms_variant_t a bit easier
+   * \typedef sick_lms_2xx_variant_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_variant_t a bit easier
    */
-  typedef SickLMS::sick_lms_variant_t sick_lms_variant_t;
+  typedef SickLMS2xx::sick_lms_2xx_variant_t sick_lms_2xx_variant_t;
 
   /*!
-   * \typedef sick_lms_scan_angle_t
-   * \brief Makes working w/ SickLMS::sick_lms_scan_angle_t a bit easier
+   * \typedef sick_lms_2xx_scan_angle_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_scan_angle_t a bit easier
    */
-  typedef SickLMS::sick_lms_scan_angle_t sick_lms_scan_angle_t;
+  typedef SickLMS2xx::sick_lms_2xx_scan_angle_t sick_lms_2xx_scan_angle_t;
 
   /*!
-   * \typedef sick_lms_scan_resolution_t
-   * \brief Makes working w/ SickLMS::sick_lms_scan_resolution_t a bit easier
+   * \typedef sick_lms_2xx_scan_resolution_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_scan_resolution_t a bit easier
    */
-  typedef SickLMS::sick_lms_scan_resolution_t sick_lms_scan_resolution_t;
+  typedef SickLMS2xx::sick_lms_2xx_scan_resolution_t sick_lms_2xx_scan_resolution_t;
 
   /*!
-   * \typedef sick_lms_measuring_units_t
-   * \brief Makes working w/ SickLMS::sick_lms_measuring_units_t a bit easier
+   * \typedef sick_lms_2xx_measuring_units_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_measuring_units_t a bit easier
    */
-  typedef SickLMS::sick_lms_measuring_units_t sick_lms_measuring_units_t;
+  typedef SickLMS2xx::sick_lms_2xx_measuring_units_t sick_lms_2xx_measuring_units_t;
 
   /*!
-   * \typedef sick_lms_sensitivity_t
-   * \brief Makes working w/ SickLMS::sick_lms_sensitivity_t a bit easier
+   * \typedef sick_lms_2xx_sensitivity_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_sensitivity_t a bit easier
    */
-  typedef SickLMS::sick_lms_sensitivity_t sick_lms_sensitivity_t;
+  typedef SickLMS2xx::sick_lms_2xx_sensitivity_t sick_lms_2xx_sensitivity_t;
 
   /*!
-   * \typedef sick_lms_peak_threshold_t
-   * \brief Makes working w/ SickLMS::sick_lms_peak_threshold_t a bit easier
+   * \typedef sick_lms_2xx_peak_threshold_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_peak_threshold_t a bit easier
    */
-  typedef SickLMS::sick_lms_peak_threshold_t sick_lms_peak_threshold_t;
+  typedef SickLMS2xx::sick_lms_2xx_peak_threshold_t sick_lms_2xx_peak_threshold_t;
   
   /*!
-   * \typedef sick_lms_status_t
-   * \brief Makes working w/ SickLMS::sick_lms_status_t a bit easier
+   * \typedef sick_lms_2xx_status_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_status_t a bit easier
    */
-  typedef SickLMS::sick_lms_status_t sick_lms_status_t;
+  typedef SickLMS2xx::sick_lms_2xx_status_t sick_lms_2xx_status_t;
 
   /*!
-   * \typedef sick_lms_measuring_mode_t
-   * \brief Makes working w/ SickLMS::sick_lms_measuring_mode_t a bit easier
+   * \typedef sick_lms_2xx_measuring_mode_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_measuring_mode_t a bit easier
    */
-  typedef SickLMS::sick_lms_measuring_mode_t sick_lms_measuring_mode_t;
+  typedef SickLMS2xx::sick_lms_2xx_measuring_mode_t sick_lms_2xx_measuring_mode_t;
 
   /*!
-   * \typedef sick_lms_operating_mode_t
-   * \brief Makes working w/ SickLMS::sick_lms_operating_mode_t a bit easier
+   * \typedef sick_lms_2xx_operating_mode_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_operating_mode_t a bit easier
    */
-  typedef SickLMS::sick_lms_operating_mode_t sick_lms_operating_mode_t;
+  typedef SickLMS2xx::sick_lms_2xx_operating_mode_t sick_lms_2xx_operating_mode_t;
 
   /*!
-   * \typedef sick_lms_baud_t
-   * \brief Makes working w/ SickLMS::sick_lms_baud_t a bit easier
+   * \typedef sick_lms_2xx_baud_t
+   * \brief Makes working w/ SickLMS2xx::sick_lms_2xx_baud_t a bit easier
    */
-  typedef SickLMS::sick_lms_baud_t sick_lms_baud_t;
+  typedef SickLMS2xx::sick_lms_2xx_baud_t sick_lms_2xx_baud_t;
   
 } //namespace SickToolbox
   
-#endif //SICK_LMS_HH
+#endif //SICK_LMS_2XX_HH
