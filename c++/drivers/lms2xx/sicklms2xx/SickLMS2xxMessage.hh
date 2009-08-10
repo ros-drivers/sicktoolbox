@@ -1,6 +1,6 @@
 /*!
- * \file SickLMSMessage.hh
- * \brief Definition of class SickLMSMessage.
+ * \file SickLMS2xxMessage.hh
+ * \brief Definition of class SickLMS2xxMessage.
  *
  * Code by Jason C. Derenick and Thomas H. Miller.
  * Contact derenick(at)lehigh(dot)edu
@@ -13,8 +13,8 @@
  * See http://sicktoolbox.sourceforge.net
  */
 
-#ifndef SICK_LMS_MESSAGE_HH
-#define SICK_LMS_MESSAGE_HH
+#ifndef SICK_LMS_2XX_MESSAGE_HH
+#define SICK_LMS_2XX_MESSAGE_HH
 
 /* Definition dependencies */
 #include <string.h>
@@ -22,14 +22,14 @@
 #include "SickMessage.hh"
 #include "SickException.hh"
 
-#define CRC16_GEN_POL 0x8005                    ///< Used to compute CRCs
+#define CRC16_GEN_POL 0x8005                        ///< Used to compute CRCs
 
 /** Makes a "short" in little endian */
 #define MKSHORT(a,b) ((unsigned short) (a) | ((unsigned short)(b) << 8))
 
-#define SICK_LMS_MSG_HEADER_LEN            (4)  ///< Sick LMS message length in bytes
-#define SICK_LMS_MSG_PAYLOAD_MAX_LEN     (812)  ///< Sick LMS max payload length in bytes
-#define SICK_LMS_MSG_TRAILER_LEN           (2)  ///< Sick LMS message trailer length in bytes 
+#define SICK_LMS_2XX_MSG_HEADER_LEN            (4)  ///< Sick LMS message length in bytes
+#define SICK_LMS_2XX_MSG_PAYLOAD_MAX_LEN     (812)  ///< Sick LMS max payload length in bytes
+#define SICK_LMS_2XX_MSG_TRAILER_LEN           (2)  ///< Sick LMS message trailer length in bytes 
 
 /* Associate the namespace */
 namespace SickToolbox {
@@ -40,19 +40,19 @@ namespace SickToolbox {
    * This class helps to construct messages to be sent to the Sick. It also
    * provides a container for received messages to be parsed into.
    */
-  class SickLMSMessage : public SickMessage< SICK_LMS_MSG_HEADER_LEN, SICK_LMS_MSG_PAYLOAD_MAX_LEN, SICK_LMS_MSG_TRAILER_LEN >
+  class SickLMS2xxMessage : public SickMessage< SICK_LMS_2XX_MSG_HEADER_LEN, SICK_LMS_2XX_MSG_PAYLOAD_MAX_LEN, SICK_LMS_2XX_MSG_TRAILER_LEN >
   {
 
   public:
   
     /** Default constructor. Constructs an empty message (not well-formed!). */
-    SickLMSMessage( );
+    SickLMS2xxMessage( );
 
     /** Constructs a frame by using BuildMessage(). */
-    SickLMSMessage( const uint8_t dest_address, const uint8_t * const payload_buffer, const unsigned int payload_length );
+    SickLMS2xxMessage( const uint8_t dest_address, const uint8_t * const payload_buffer, const unsigned int payload_length );
 
     /** Constructs a frame using ParseMessage(). */
-    SickLMSMessage( uint8_t * const message_buffer );
+    SickLMS2xxMessage( uint8_t * const message_buffer );
 
     /** Constructs a well-formed raw frame from input fields. */
     void BuildMessage( uint8_t dest_address, const uint8_t * const payload_buffer,
@@ -80,7 +80,7 @@ namespace SickToolbox {
     void Print( ) const;
 
     /** Destructor */
-    ~SickLMSMessage();
+    ~SickLMS2xxMessage();
 
   protected:
 
@@ -96,4 +96,4 @@ namespace SickToolbox {
 
 } /* namespace SickToolbox */
   
-#endif //SICK_LMS_MESSAGE_HH
+#endif //SICK_LMS_2XX_MESSAGE_HH

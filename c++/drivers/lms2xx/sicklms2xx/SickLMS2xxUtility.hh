@@ -1,5 +1,5 @@
 /*!
- * \file SickLMSUtility.hh
+ * \file SickLMS2xxUtility.hh
  * \brief Defines simple utility functions for working with the
  *        Sick LMS 2xx laser range finder units.
  *
@@ -43,7 +43,7 @@ namespace SickToolbox {
  * \param value The 2-byte value to convert to little-endian
  * \return Value in Sick LMS byte order (little-endian)
  */
-inline uint16_t host_to_sick_lms_byte_order( uint16_t value ) {
+inline uint16_t host_to_sick_lms_2xx_byte_order( uint16_t value ) {
   return value;
 }
 
@@ -52,7 +52,7 @@ inline uint16_t host_to_sick_lms_byte_order( uint16_t value ) {
  * \param value The 4-byte value to convert to little-endian
  * \return Value in Sick LMS byte order (little-endian)
  */
-inline uint32_t host_to_sick_lms_byte_order( uint32_t value ) {
+inline uint32_t host_to_sick_lms_2xx_byte_order( uint32_t value ) {
   return value;
 }
 
@@ -61,7 +61,7 @@ inline uint32_t host_to_sick_lms_byte_order( uint32_t value ) {
  * \param value The 2-byte value to convert to little-endian
  * \return Value in host byte order (little-endian)
  */
-inline uint16_t sick_lms_to_host_byte_order( uint16_t value ) {
+inline uint16_t sick_lms_2xx_to_host_byte_order( uint16_t value ) {
   return value;
 }
 
@@ -70,7 +70,7 @@ inline uint16_t sick_lms_to_host_byte_order( uint16_t value ) {
  * \param value The 4-byte value to convert to little-endian
  * \return Value in host byte order (little-endian)
  */
-inline uint32_t sick_lms_to_host_byte_order( uint32_t value ) {
+inline uint32_t sick_lms_2xx_to_host_byte_order( uint32_t value ) {
   return value;
 }
 
@@ -81,7 +81,7 @@ inline uint32_t sick_lms_to_host_byte_order( uint32_t value ) {
  * \param value The 2-byte value to convert to little-endian
  * \return Value in Sick LMS byte order (little-endian)
  */
-inline uint16_t host_to_sick_lms_byte_order( uint16_t value ) {
+inline uint16_t host_to_sick_lms_2xx_byte_order( uint16_t value ) {
   return REVERSE_BYTE_ORDER_16(value);
 }
 
@@ -90,7 +90,7 @@ inline uint16_t host_to_sick_lms_byte_order( uint16_t value ) {
  * \param value The 4-byte value to convertto little-endian
  * \return Value in Sick LMS byte order (little-endian)
  */
-inline uint32_t host_to_sick_lms_byte_order( uint32_t value ) {
+inline uint32_t host_to_sick_lms_2xx_byte_order( uint32_t value ) {
   return REVERSE_BYTE_ORDER_32(value);
 }
 
@@ -99,7 +99,7 @@ inline uint32_t host_to_sick_lms_byte_order( uint32_t value ) {
  * \param value The 2-byte value to convert to big-endian
  * \return Value in host byte order (big-endian)
  */
-inline uint16_t sick_lms_to_host_byte_order( uint16_t value ) {
+inline uint16_t sick_lms_2xx_to_host_byte_order( uint16_t value ) {
   return REVERSE_BYTE_ORDER_16(value);
 }
 
@@ -108,7 +108,7 @@ inline uint16_t sick_lms_to_host_byte_order( uint16_t value ) {
  * \param value The 4-byte value to convert to big-endian
  * \return Value in host byte order (big-endian)
  */
-inline uint32_t sick_lms_to_host_byte_order( uint32_t value ) {
+inline uint32_t sick_lms_2xx_to_host_byte_order( uint32_t value ) {
   return REVERSE_BYTE_ORDER_32(value);
 }
 
