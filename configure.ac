@@ -10,7 +10,8 @@ AM_CONFIG_HEADER([c++/drivers/base/src/SickConfig.hh])
 	
 # Set source dirs
 AX_SICK_LD_SRC_DIR(sickld-1.0)
-AX_SICK_LMS_SRC_DIR(sicklms-1.0)
+AX_SICK_LMS_1XX_SRC_DIR(sicklms1xx)
+AX_SICK_LMS_2XX_SRC_DIR(sicklms2xx)
 	
 # Checks for programs.
 AC_PROG_CXX
