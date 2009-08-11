@@ -71,6 +71,9 @@ AC_CONFIG_FILES([Makefile
                  c++/examples/ld/ld_multi_sector/src/Makefile
                  c++/examples/ld/ld_single_sector/Makefile
                  c++/examples/ld/ld_single_sector/src/Makefile
+                 c++/examples/lms1xx/Makefile
+                 c++/examples/lms1xx/lms1xx_simple_app/Makefile
+                 c++/examples/lms1xx/lms1xx_simple_app/src/Makefile
                  c++/examples/lms2xx/Makefile
                  c++/examples/lms2xx/lms2xx_config/Makefile
                  c++/examples/lms2xx/lms2xx_config/src/Makefile

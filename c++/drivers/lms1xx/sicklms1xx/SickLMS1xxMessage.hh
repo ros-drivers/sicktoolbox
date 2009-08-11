@@ -1,6 +1,6 @@
 /*!
  * \file SickLMS1xx Message.hh
- * \brief Defines the class SickLDMessage.
+ * \brief Defines the class SickLMS1xxMessage.
  *
  * Code by Jason C. Derenick and Christopher R. Mansley.
  * Contact jasonder(at)seas(dot)upenn(dot)edu
@@ -17,8 +17,8 @@
 #define SICK_LMS_1XX_MESSAGE_HH
 
 /* Macros */
-#define SICK_LMS_1XX_MSG_HEADER_LEN             (8)  ///< Sick LMS 1xx message header length in bytes
-#define SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN     (5816)  ///< Sick LMS 1xx maximum payload length
+#define SICK_LMS_1XX_MSG_HEADER_LEN             (1)  ///< Sick LMS 1xx message header length in bytes
+#define SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN     (2604)  ///< Sick LMS 1xx maximum payload length
 #define SICK_LMS_1XX_MSG_TRAILER_LEN            (1)  ///< Sick LMS 1xx length of the message trailer
 
 /* Definition dependencies */
@@ -53,10 +53,10 @@ namespace SickToolbox {
     void ParseMessage( const uint8_t * const message_buffer );
     
     /** Get the length of the service code associated with the message */
-    uint8_t GetServiceCode( ) const { return _message_buffer[8]; }
+    std::string GetCommandType( ) const { return ""; }
     
     /** Get the service sub-code associated with the message */
-    uint8_t GetServiceSubcode( ) const { return _message_buffer[9]; }
+    std::string GetCommand( ) const { return ""; }
     
     /** Get the checksum for the packet */
     uint8_t GetChecksum( ) const { return _message_buffer[_message_length-1]; }
@@ -68,11 +68,12 @@ namespace SickToolbox {
     ~SickLMS1xxMessage( );
 
   private:
+
+    /** Command type associated w/ message */
+    std::string _command_type;
     
-    /** Computes the checksum of the frame.
-     *  NOTE: Uses XOR of single bytes over packet payload data.
-     */
-    uint8_t _computeXOR( const uint8_t * const data, const uint32_t length );
+    /** Command associated w/ message */
+    std::string _command;
     
   };
   

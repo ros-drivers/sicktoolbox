@@ -1,26 +1,27 @@
 /*!
- * \file SickLDBufferMonitor.hh
+ * \file SickLMS1xxBufferMonitor.hh
  * \brief Defines a class for monitoring the receive
- *        buffer when interfacing w/ a Sick LMS LIDAR.
+ *        buffer when interfacing w/ a Sick LMS 1xx
+ *        laser range finder unit.
  *
- * Code by Jason C. Derenick and Thomas H. Miller.
- * Contact derenick(at)lehigh(dot)edu
+ * Code by Jason C. Derenick and Christopher R. Mansley.
+ * Contact jasonder(at)seas(dot)upenn(dot)edu
  *
  * The Sick LIDAR Matlab/C++ Toolbox
- * Copyright (c) 2008, Jason C. Derenick and Thomas H. Miller
+ * Copyright (c) 2009, Jason C. Derenick and Christopher R. Mansley
  * All rights reserved.
  *
  * This software is released under a BSD Open-Source License.
  * See http://sicktoolbox.sourceforge.net
  */
 
-#ifndef SICK_LD_BUFFER_MONITOR_HH
-#define SICK_LD_BUFFER_MONITOR_HH
+#ifndef SICK_LMS_1XX_BUFFER_MONITOR_HH
+#define SICK_LMS_1XX_BUFFER_MONITOR_HH
 
 #define DEFAULT_SICK_BYTE_TIMEOUT         (35000)  ///< Max allowable time between consecutive bytes
 
 /* Definition dependencies */
-#include "SickLDMessage.hh"
+#include "SickLMS1xxMessage.hh"
 #include "SickBufferMonitor.hh"
 #include "SickException.hh"
 
@@ -30,21 +31,21 @@ namespace SickToolbox {
   /*!
    * \brief A class for monitoring the receive buffer when interfacing with a Sick LD LIDAR
    */
-  class SickLDBufferMonitor : public SickBufferMonitor< SickLDBufferMonitor, SickLDMessage > {
+  class SickLMS1xxBufferMonitor : public SickBufferMonitor< SickLMS1xxBufferMonitor, SickLMS1xxMessage > {
 
   public:
 
     /** A standard constructor */
-    SickLDBufferMonitor( );
+    SickLMS1xxBufferMonitor( );
 
     /** A method for extracting a single message from the stream */
-    void GetNextMessageFromDataStream( SickLDMessage &sick_message ) throw( SickIOException );
+    void GetNextMessageFromDataStream( SickLMS1xxMessage &sick_message ) throw( SickIOException );
 
     /** A standard destructor */
-    ~SickLDBufferMonitor( );
+    ~SickLMS1xxBufferMonitor( );
 
   };
     
 } /* namespace SickToolbox */
 
-#endif /* SICK_LD_BUFFER_MONITOR_HH */
+#endif /* SICK_LMS_1XX_BUFFER_MONITOR_HH */
