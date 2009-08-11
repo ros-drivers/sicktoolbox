@@ -1,0 +1,1 @@
+SUBDIRS=lms1xx_simple_app

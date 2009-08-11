@@ -64,7 +64,7 @@ namespace SickToolbox {
   }
   
   /**
-   * \brief Constructs a Sick LD message given parameter values
+   * \brief Constructs a well-formed Sick LMS 1xx message
    * \param *payload_buffer An address of the first byte to be copied into the message's payload
    * \param payload_length The number of bytes to be copied into the message buffer
    */
@@ -80,20 +80,12 @@ namespace SickToolbox {
     /*
      * Set the message header!
      */
-    //_message_buffer[0] = 0x02; // STX
-    //_message_buffer[1] = 'U';  // User
-    //_message_buffer[2] = 'S';  // Service
-    //_message_buffer[3] = 'P';  // Protocol
-    
-    /* Include the payload length in the header */
-    //uint32_t payload_length_32 = host_to_sick_ld_byte_order((uint32_t)_payload_length);
-    //memcpy(&_message_buffer[4],&payload_length_32,4);
-    
-    /*
-     * Set the message trailer (just a checksum)!
-     */
-    //_message_buffer[_message_length-1] = _computeXOR(&_message_buffer[8],(uint32_t)_payload_length);
+    _message_buffer[0] = 0x02;                 // STX
 
+    /*
+     * Set the message trailer! 
+     */
+    _message_buffer[_message_length-1] = 0x03; // ETX
 
   }
   
@@ -106,16 +98,29 @@ namespace SickToolbox {
     /* Call the parent method
      * NOTE: This method resets the object and assigns _populated as true
      */
-    //SickMessage< SICK_LMS_1XX_MSG_HEADER_LEN, SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN, SICK_LMS_1XX_MSG_TRAILER_LEN >
-    //  ::ParseMessage(message_buffer);
+    SickMessage< SICK_LMS_1XX_MSG_HEADER_LEN, SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN, SICK_LMS_1XX_MSG_TRAILER_LEN >
+      ::ParseMessage(message_buffer);
     
-    /* Extract the payload length */
-    //uint32_t payload_length_32 = 0;
-    //memcpy(&payload_length_32,&message_buffer[4],4);
-    //_payload_length = (unsigned int)sick_ld_to_host_byte_order(payload_length_32);
+    /* Compute the message length */
+    //int i = 1;
+    //while (message_buffer[i-1] != 0x03 || i > ) {
+
+      /* Grab the command type */
+    //  _command_type = strtok(_message_buffer," ");
+
+    //    if ((token = strtok(&msg_buffer[pos]," ")) == NULL) {
+    //std::cerr << "SickLMS1xx::GetSickMeasurements: strtok() failed!" << std::endl;
+    //return false;
+    //}
+ 
+      /* Grab the command code */
+      
+    //  i++;
+      
+    }
 
     /* Compute the total message length */
-    //_message_length = MESSAGE_HEADER_LENGTH + MESSAGE_TRAILER_LENGTH + _payload_length;
+    //_payload_length = _message_length - MESSAGE_HEADER_LENGTH - MESSAGE_TRAILER_LENGTH;
     
     /* Copy the given packet into the buffer */
     //memcpy(_message_buffer,message_buffer,_message_length);
