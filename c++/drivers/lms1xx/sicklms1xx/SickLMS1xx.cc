@@ -78,8 +78,9 @@ namespace SickToolbox {
       std::cout << "\t\tBuffer monitor started!" << std::endl;
     
       /* Ok, lets sync the driver with the Sick */
-      //std::cout << "\tAttempting to sync driver with Sick LD..." << std::endl;
+      std::cout << "\tAttempting to get device status..." << std::endl;
       //_syncDriverWithSick();
+      _getSickStatus();
       
     }
     
@@ -304,5 +305,87 @@ namespace SickToolbox {
      
    }
 
+  /**
+   * \brief Get the status of the Sick LD
+   */
+  void SickLMS1xx::_getSickStatus( ) throw( SickTimeoutException, SickIOException ) {
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+
+    /* Set the command type */
+    payload_buffer[0] = 's';
+    payload_buffer[1] = 'R';
+    payload_buffer[2] = 'N';
+    
+    payload_buffer[3] = ' ';
+
+    /* Set the command */
+    payload_buffer[4] = 'S';
+    payload_buffer[5] = 'T';
+    payload_buffer[6] = 'l';
+    payload_buffer[7] = 'm';
+    payload_buffer[8] = 's';
+
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,9);
+
+    /* Setup recv message */
+    const uint8_t recv_message_header[10] = {0x02,
+					      's',
+				              'R',
+				              'A',
+				              ' ',
+				              'S',
+				              'T',
+				              'l',
+				              'm',
+				              's'};
+    
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    /* Send message and get reply using parent's method */
+    try {
+      
+      SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >::_sendMessageAndGetReply(send_message,
+										       recv_message,
+										       recv_message_header,
+										       sizeof(recv_message_header),
+										       0,
+										       DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT,
+										       1);
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Reset the buffer (not necessary, but its better to do so just in case) */
+    memset(payload_buffer,0,9);
+  
+    /* Extract the message payload */
+    recv_message.GetPayload(payload_buffer);
+
+    //recv_message.Print();
+    
+    /* Success */
+
+  }
 
 } //namespace SickToolbox

@@ -25,6 +25,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include "SickMessage.hh"
+#include "SickException.hh"
 
 /* Associate the namespace */
 namespace SickToolbox {
@@ -50,16 +51,13 @@ namespace SickToolbox {
     void BuildMessage( const uint8_t * const payload_buffer, const unsigned int payload_length );
     
     /** Populates fields from a (well-formed) raw packet */
-    void ParseMessage( const uint8_t * const message_buffer );
+    void ParseMessage( const uint8_t * const message_buffer ) throw ( SickIOException );
     
     /** Get the length of the service code associated with the message */
-    std::string GetCommandType( ) const { return ""; }
+    std::string GetCommandType( ) const { return _command_type; }
     
     /** Get the service sub-code associated with the message */
-    std::string GetCommand( ) const { return ""; }
-    
-    /** Get the checksum for the packet */
-    uint8_t GetChecksum( ) const { return _message_buffer[_message_length-1]; }
+    std::string GetCommand( ) const { return _command; }
     
     /** A debugging function that prints the contents of the frame. */
     void Print( ) const;

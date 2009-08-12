@@ -21,7 +21,7 @@
 #define DEFAULT_SICK_LMS_1XX_IP_ADDRESS                   "192.168.0.1"  //< Default IP Address
 #define DEFAULT_SICK_LMS_1XX_TCP_PORT                            (2111)  //< Sick LMS 1xx TCP/IP Port
 #define DEFAULT_SICK_LMS_1XX_CONNECT_TIMEOUT                  (1000000)  //< Max time for establishing connection (usecs)
-#define DEFAULT_SICK_LMS_1XX_BYTE_TIMEOUT                       (40000)  //< Max time between bytes (usecs)
+#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (1000000)  //< Max time for reply (usecs)
 
 #define SICK_LMS_1XX_MAX_BUFFER_LENGTH                           (2604)  //< Maximum number of bytes
 
@@ -55,6 +55,24 @@ namespace SickToolbox {
 
   public:
 
+    /*!
+     * \enum sick_lms_1xx_status_t 
+     * \brief Defines the Sick LMS 1xx status.
+     * This enum lists all of the Sick LMS 1xx status.
+     */
+    enum sick_lms_1xx_status_t {
+      
+      SICK_LMS_STATUS_UNDEFINED = 0x00,                                                  ///< LMS 1xx status indefined
+      SICK_LMS_STATUS_INITIALIZATION = 0x01,                                             ///< LMS 1xx initializing
+      SICK_LMS_STATUS_CONFIGURATION = 0x02,                                              ///< LMS 1xx configuration
+      SICK_LMS_STATUS_IDLE = 0x03,                                                       ///< LMS 1xx is idle
+      SICK_LMS_STATUS_ROTATED = 0x04,                                                    ///< LMS 1xx mirror rotating
+      SICK_LMS_STATUS_IN_PREP = 0x05,                                                    ///< LMS 1xx in preparation
+      SICK_LMS_STATUS_READY = 0x06,                                                      ///< LMS 1xx is ready
+      SICK_LMS_STATUS_READY_FOR_MEASUREMENT = 0x07                                       ///< LMS 1xx is ready to give measurements 
+
+    };
+    
     /** Primary constructor */
     SickLMS1xx( const std::string sick_ip_address = DEFAULT_SICK_LMS_1XX_IP_ADDRESS,
 	    const uint16_t sick_tcp_port = DEFAULT_SICK_LMS_1XX_TCP_PORT );
@@ -85,8 +103,17 @@ namespace SickToolbox {
     /** Teardown the connection to the Sick LD */
     void _teardownConnection( ) throw( SickIOException );
 
+    /** Acquire the Sick LMS's status */
+    void _getSickStatus() throw( SickTimeoutException, SickIOException );
+
   };
 
+  /*!
+   * \typedef sick_lms_1xx_type_t
+   * \brief Makes working w/ SickLMS1xx::sick_lms_1xx_status_t a bit easier
+   */
+  typedef SickLMS1xx::sick_lms_1xx_status_t sick_lms_1xx_status_t;
+  
 } //namespace SickToolbox
   
 #endif /* SICK_LMS_1XX_HH */
