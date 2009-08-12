@@ -18,7 +18,7 @@
 #ifndef SICK_LMS_1XX_BUFFER_MONITOR_HH
 #define SICK_LMS_1XX_BUFFER_MONITOR_HH
 
-#define DEFAULT_SICK_BYTE_TIMEOUT         (35000)  ///< Max allowable time between consecutive bytes
+#define DEFAULT_SICK_LMS_1XX_BYTE_TIMEOUT         (35000)  ///< Max allowable time between consecutive bytes
 
 /* Definition dependencies */
 #include "SickLMS1xxMessage.hh"
