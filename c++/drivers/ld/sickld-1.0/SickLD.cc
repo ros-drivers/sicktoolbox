@@ -4108,7 +4108,7 @@ namespace SickToolbox {
     
     /* A safety net */
     catch (...) {
-      std::cerr << "SickLMS::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      std::cerr << "SickLD::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
       throw;
     }
 

@@ -43,13 +43,13 @@ namespace SickToolbox {
    * \param sick_device_path The path of the device
    */
   SickLMS2xx::SickLMS2xx( const std::string sick_device_path ): SickLIDAR< SickLMS2xxBufferMonitor, SickLMS2xxMessage >( ),
-							  _sick_device_path(sick_device_path),
-							  _curr_session_baud(SICK_BAUD_UNKNOWN),
-							  _desired_session_baud(SICK_BAUD_UNKNOWN),
-							  _sick_type(SICK_LMS_TYPE_UNKNOWN),
-							  _sick_mean_value_sample_size(0),
-							  _sick_values_subrange_start_index(0),
-							  _sick_values_subrange_stop_index(0)
+								_sick_device_path(sick_device_path),
+								_curr_session_baud(SICK_BAUD_UNKNOWN),
+								_desired_session_baud(SICK_BAUD_UNKNOWN),
+								_sick_type(SICK_LMS_TYPE_UNKNOWN),
+								_sick_mean_value_sample_size(0),
+								_sick_values_subrange_start_index(0),
+								_sick_values_subrange_stop_index(0)
   {
     
     /* Initialize the protected/private structs */
@@ -2423,9 +2423,9 @@ namespace SickToolbox {
    * NOTE: Uses the 0x80 response code rule for looking for the response message
    */
   void SickLMS2xx::_sendMessageAndGetReply( const SickLMS2xxMessage &send_message,
-					 SickLMS2xxMessage &recv_message,
-					 const unsigned int timeout_value,
-					 const unsigned int num_tries ) throw( SickIOException, SickThreadException, SickTimeoutException ) {
+					    SickLMS2xxMessage &recv_message,
+					    const unsigned int timeout_value,
+					    const unsigned int num_tries ) throw( SickIOException, SickThreadException, SickTimeoutException ) {
 
     uint8_t sick_reply_code = send_message.GetCommandCode() + 0x80;
     
@@ -2471,10 +2471,10 @@ namespace SickToolbox {
    * \param num_tries The number of times to send the message in the event the LMS fails to reply
    */
   void SickLMS2xx::_sendMessageAndGetReply( const SickLMS2xxMessage &send_message,
-					 SickLMS2xxMessage &recv_message,
-					 const uint8_t reply_code,
-					 const unsigned int timeout_value,
-					 const unsigned int num_tries ) throw( SickIOException, SickThreadException, SickTimeoutException ) {
+					    SickLMS2xxMessage &recv_message,
+					    const uint8_t reply_code,
+					    const unsigned int timeout_value,
+					    const unsigned int num_tries ) throw( SickIOException, SickThreadException, SickTimeoutException ) {
 
     try {
 
