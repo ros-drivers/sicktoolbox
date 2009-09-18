@@ -18,12 +18,15 @@
 #define SICK_LMS_1XX_HH
 
 /* Macros */
-#define DEFAULT_SICK_LMS_1XX_IP_ADDRESS                   "192.168.0.1"  //< Default IP Address
-#define DEFAULT_SICK_LMS_1XX_TCP_PORT                            (2111)  //< Sick LMS 1xx TCP/IP Port
-#define DEFAULT_SICK_LMS_1XX_CONNECT_TIMEOUT                  (1000000)  //< Max time for establishing connection (usecs)
-#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (1000000)  //< Max time for reply (usecs)
+#define DEFAULT_SICK_LMS_1XX_IP_ADDRESS                   "192.168.0.1"                 ///< Default IP Address
+#define DEFAULT_SICK_LMS_1XX_TCP_PORT                            (2111)                 ///< Sick LMS 1xx TCP/IP Port
+#define DEFAULT_SICK_LMS_1XX_CONNECT_TIMEOUT                  (1000000)                 ///< Max time for establishing connection (usecs)
+#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (1000000)                 ///< Max time for reply (usecs)
 
-#define SICK_LMS_1XX_MAX_BUFFER_LENGTH                           (2604)  //< Maximum number of bytes
+#define SICK_LMS_1XX_MAX_BUFFER_LENGTH                           (2604)                 ///< Maximum number of bytes
+
+#define SICK_LMS_1XX_SCAN_AREA_MIN_ANGLE                      (-450000)                 ///< -45 degrees (1/10000) degree
+#define SICK_LMS_1XX_SCAN_AREA_MAX_ANGLE                      (2250000)                 ///< 225 degrees (1/10000) degree
 
 /* Definition dependencies */
 #include <string>
@@ -56,7 +59,7 @@ namespace SickToolbox {
      */
     enum sick_lms_1xx_status_t {
       
-      SICK_LMS_1XX_STATUS_UNDEFINED = 0x00,                                             ///< LMS 1xx status indefined
+      SICK_LMS_1XX_STATUS_UNDEFINED = 0x00,                                             ///< LMS 1xx status undefined
       SICK_LMS_1XX_STATUS_INITIALIZATION = 0x01,                                        ///< LMS 1xx initializing
       SICK_LMS_1XX_STATUS_CONFIGURATION = 0x02,                                         ///< LMS 1xx configuration
       SICK_LMS_1XX_STATUS_IDLE = 0x03,                                                  ///< LMS 1xx is idle
@@ -68,6 +71,30 @@ namespace SickToolbox {
     };
 
     /*!
+     * \enum sick_lms_1xx_scan_freq_t 
+     * \brief Defines the Sick LMS 1xx scan frequency.
+     * This enum lists all of the Sick LMS 1xx scan frequencies.
+     */
+    enum sick_lms_1xx_scan_freq_t {
+      
+      SICK_LMS_1XX_SCAN_FREQ_25 = 0x09C4,                                               ///< LMS 1xx scan freq 25Hz
+      SICK_LMS_1XX_SCAN_FREQ_50 = 0X1388                                                ///< LMS 1xx scan freq 50Hz
+
+    };
+
+    /*!
+     * \enum sick_lms_1xx_scan_res_t 
+     * \brief Defines the Sick LMS 1xx scan resolution.
+     * This enum lists all of the Sick LMS 1xx scan resolutions.
+     */
+    enum sick_lms_1xx_scan_res_t {
+      
+      SICK_LMS_1XX_SCAN_RES_25 = 0x09C4,                                                ///< LMS 1xx scan res 0.25 deg
+      SICK_LMS_1XX_SCAN_RES_50 = 0x1388                                                 ///< LMS 1xx scan res 0.25 deg
+
+    };
+    
+    /*!
      * \struct sick_lms_1xx_scan_config_tag
      * \brief A structure for aggregrating the
      *        Sick LMS 1xx configuration params.
@@ -77,8 +104,8 @@ namespace SickToolbox {
      * \brief Adopt c-style convention
      */
     typedef struct sick_lms_1xx_scan_config_tag {
-      uint32_t sick_scan_freq;                                                          ///< Sick system software version
-      uint32_t sick_scan_res;                                                           ///< Sick system software version      
+      sick_lms_1xx_scan_freq_t sick_scan_freq;                                          ///< Sick system software version
+      sick_lms_1xx_scan_res_t sick_scan_res;                                            ///< Sick system software version      
       int32_t sick_start_angle;                                                         ///< Sick boot prom software version
       int32_t sick_stop_angle;                                                          ///< Sick boot prom software version
     } sick_lms_1xx_scan_config_t;
@@ -88,10 +115,15 @@ namespace SickToolbox {
 		const uint16_t sick_tcp_port = DEFAULT_SICK_LMS_1XX_TCP_PORT );
     
     /** Initializes the Sick LD unit (use scan areas defined in flash) */
-    void Initialize( )  throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException );
+    void Initialize( ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException );
 
-    /** Sets the scan configuration (volatile, does not write to EEPROM) */
-    void SetSickScanConfig( ) throw( SickTimeoutException, SickIOException, SickConfigException );
+    /** Sets the Sick LMS1xx scan frequency and scan resolution */
+    void SetSickScanFreqAndRes( const sick_lms_1xx_scan_freq_t scan_freq,
+				const sick_lms_1xx_scan_res_t scan_res ) throw( SickTimeoutException, SickIOException, SickConfigException ); 
+
+    /** Sets the Sick LMS1xx scan frequency and scan resolution */
+    void SetSickScanArea( const int scan_start_angle,
+			  const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException ); 
     
     /** Uninitializes the Sick LD unit */
     void Uninitialize( ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException );
@@ -125,8 +157,16 @@ namespace SickToolbox {
     /** Acquire the Sick LMS's scan config */
     void _getSickScanConfig( ) throw( SickTimeoutException, SickIOException );
 
+    /** Sets the scan configuration (volatile, does not write to EEPROM) */
+    void _setSickScanConfig( const sick_lms_1xx_scan_freq_t scan_freq,
+			     const sick_lms_1xx_scan_res_t scan_res,
+			     const int start_angle, const int stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException );
+    
     /** Set access mode for configuring device */
     bool _setAuthorizedClientAccessMode() throw( SickTimeoutException, SickIOException );
+
+    /** Save configuration parameters to EEPROM */
+    void _writeToEEPROM( ) throw( SickTimeoutException, SickIOException );
     
     /** Send the message and grab expected reply */
     void _sendMessageAndGetReply( const SickLMS1xxMessage &send_message,
@@ -136,6 +176,9 @@ namespace SickToolbox {
 				  const unsigned int timeout_value = DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT,
 				  const unsigned int num_tries = 1 ) throw( SickIOException, SickTimeoutException );
 
+    /** Ensures a feasible scan area */
+    bool _validScanArea( const int start_angle, const int stop_angle ) const;
+    
     /** Utility function to convert int to status */
     sick_lms_1xx_status_t _intToSickStatus( const int status ) const;
 
@@ -147,7 +190,7 @@ namespace SickToolbox {
     
     /** Utility function for printing footer after initialization */
     void _printInitFooter( ) const;
-    
+
   };
 
   /*!
