@@ -56,13 +56,15 @@ namespace SickToolbox {
       while (byte_buffer != 0x02);
       
       /* Ok, now acquire the payload! (until ETX) */
-      int payload_length = 1;
-      for (; payload_buffer[payload_length-1] !=0x03; payload_length++) {
-
-	/* Grab the next byte from the stream */
+      int payload_length = 0;
+      do {
+	
+	payload_length++;
  	_readBytes(&payload_buffer[payload_length-1],1,DEFAULT_SICK_LMS_1XX_BYTE_TIMEOUT);
 	
       }
+      while (payload_buffer[payload_length-1] != 0x03);
+      payload_length--;
       
       /* Build the return message object based upon the received payload
        * NOTE: In constructing this message we ignore the header bytes
@@ -70,7 +72,7 @@ namespace SickToolbox {
        *       correct header automatically and verify the message size
        */
       sick_message.BuildMessage(payload_buffer,payload_length);
-      
+
       /* Success */
       
     }

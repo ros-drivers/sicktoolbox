@@ -48,8 +48,8 @@ namespace SickToolbox {
    */
   SickLMS1xxMessage::SickLMS1xxMessage( const uint8_t * const payload_buffer, const unsigned int payload_length ) :
     SickMessage< SICK_LMS_1XX_MSG_HEADER_LEN, SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN, SICK_LMS_1XX_MSG_TRAILER_LEN >(),
-    _command_type(""),
-    _command("")
+    _command_type("Unknown"),
+    _command("Unknown")
   {
 
     /* Build the message object (implicit initialization) */
@@ -63,15 +63,15 @@ namespace SickToolbox {
    */
   SickLMS1xxMessage::SickLMS1xxMessage( const uint8_t * const message_buffer ) :
     SickMessage< SICK_LMS_1XX_MSG_HEADER_LEN, SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN, SICK_LMS_1XX_MSG_TRAILER_LEN >(),
-    _command_type(""),
-    _command("")
+    _command_type("Unknown"),
+    _command("Unknown")
   {
 
     /* Parse the message into the container (implicit initialization) */
     ParseMessage(message_buffer); 
 
   }
-  
+
   /**
    * \brief Constructs a well-formed Sick LMS 1xx message
    * \param *payload_buffer An address of the first byte to be copied into the message's payload
@@ -95,7 +95,24 @@ namespace SickToolbox {
      * Set the message trailer! 
      */
     _message_buffer[_message_length-1] = 0x03; // ETX
-
+    
+    /* Grab the (3-byte) command type */
+    char command_type[4] = {0};
+    for (int i = 0; i < 3; i++) {
+      command_type[i] = _message_buffer[i+1];
+    }
+    command_type[4] = '\0';
+    _command_type = command_type;
+    
+    /* Grab the command (max length is 14 bytes) */
+    char command[15] = {0};
+    int i = 0;
+    for (; (i < 14) && (_message_buffer[5+i] != 0x20); i++) {
+      command[i] = _message_buffer[5+i];
+    }
+    command[i] = '\0';
+    _command = command;
+    
   }
   
   /**
@@ -124,7 +141,7 @@ namespace SickToolbox {
 	
 	_command_type = token;
 	
-	/* Grab the command Code */
+	/* Grab the Command Code */
 	if ((token = strtok(NULL," ")) == NULL) {
 	  throw SickIOException("SickLMS1xxMessage::ParseMessage: strtok() failed!");
 	}
@@ -150,6 +167,20 @@ namespace SickToolbox {
 
   }
 
+  /**
+   * \brief Reset all internal fields and buffers associated with the object.
+   */
+  void SickLMS1xxMessage::Clear( ) {    
+
+    /* Call the parent method and clear out class' protected members */
+    SickMessage< SICK_LMS_1XX_MSG_HEADER_LEN, SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN, SICK_LMS_1XX_MSG_TRAILER_LEN >::Clear();
+
+    /* Reset the class' additional fields */
+    _command_type = "Unknown";
+    _command = "Unknown";
+    
+  }
+  
   /**
    * \brief Print the message contents.
    */

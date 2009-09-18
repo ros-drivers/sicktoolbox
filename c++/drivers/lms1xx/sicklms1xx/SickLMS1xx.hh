@@ -25,12 +25,6 @@
 
 #define SICK_LMS_1XX_MAX_BUFFER_LENGTH                           (2604)  //< Maximum number of bytes
 
-/**
- * \def SWAP_VALUES(x,y,t)
- * \brief A simple macro for swapping two values.
- */
-#define SWAP_VALUES(x,y,t) (t=x,x=y,y=t);
-
 /* Definition dependencies */
 #include <string>
 #include <arpa/inet.h>
@@ -62,24 +56,43 @@ namespace SickToolbox {
      */
     enum sick_lms_1xx_status_t {
       
-      SICK_LMS_STATUS_UNDEFINED = 0x00,                                                  ///< LMS 1xx status indefined
-      SICK_LMS_STATUS_INITIALIZATION = 0x01,                                             ///< LMS 1xx initializing
-      SICK_LMS_STATUS_CONFIGURATION = 0x02,                                              ///< LMS 1xx configuration
-      SICK_LMS_STATUS_IDLE = 0x03,                                                       ///< LMS 1xx is idle
-      SICK_LMS_STATUS_ROTATED = 0x04,                                                    ///< LMS 1xx mirror rotating
-      SICK_LMS_STATUS_IN_PREP = 0x05,                                                    ///< LMS 1xx in preparation
-      SICK_LMS_STATUS_READY = 0x06,                                                      ///< LMS 1xx is ready
-      SICK_LMS_STATUS_READY_FOR_MEASUREMENT = 0x07                                       ///< LMS 1xx is ready to give measurements 
+      SICK_LMS_1XX_STATUS_UNDEFINED = 0x00,                                             ///< LMS 1xx status indefined
+      SICK_LMS_1XX_STATUS_INITIALIZATION = 0x01,                                        ///< LMS 1xx initializing
+      SICK_LMS_1XX_STATUS_CONFIGURATION = 0x02,                                         ///< LMS 1xx configuration
+      SICK_LMS_1XX_STATUS_IDLE = 0x03,                                                  ///< LMS 1xx is idle
+      SICK_LMS_1XX_STATUS_ROTATED = 0x04,                                               ///< LMS 1xx mirror rotating
+      SICK_LMS_1XX_STATUS_IN_PREP = 0x05,                                               ///< LMS 1xx in preparation
+      SICK_LMS_1XX_STATUS_READY = 0x06,                                                 ///< LMS 1xx is ready
+      SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT = 0x07                                  ///< LMS 1xx is ready to give measurements 
 
     };
+
+    /*!
+     * \struct sick_lms_1xx_scan_config_tag
+     * \brief A structure for aggregrating the
+     *        Sick LMS 1xx configuration params.
+     */
+    /*!
+     * \typedef sick_lms_1xx_scan_config_t
+     * \brief Adopt c-style convention
+     */
+    typedef struct sick_lms_1xx_scan_config_tag {
+      uint32_t sick_scan_freq;                                                          ///< Sick system software version
+      uint32_t sick_scan_res;                                                           ///< Sick system software version      
+      int32_t sick_start_angle;                                                         ///< Sick boot prom software version
+      int32_t sick_stop_angle;                                                          ///< Sick boot prom software version
+    } sick_lms_1xx_scan_config_t;
     
     /** Primary constructor */
     SickLMS1xx( const std::string sick_ip_address = DEFAULT_SICK_LMS_1XX_IP_ADDRESS,
-	    const uint16_t sick_tcp_port = DEFAULT_SICK_LMS_1XX_TCP_PORT );
+		const uint16_t sick_tcp_port = DEFAULT_SICK_LMS_1XX_TCP_PORT );
     
     /** Initializes the Sick LD unit (use scan areas defined in flash) */
     void Initialize( )  throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException );
 
+    /** Sets the scan configuration (volatile, does not write to EEPROM) */
+    void SetSickScanConfig( ) throw( SickTimeoutException, SickIOException, SickConfigException );
+    
     /** Uninitializes the Sick LD unit */
     void Uninitialize( ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException );
 
@@ -88,14 +101,17 @@ namespace SickToolbox {
 
   private:
 
-    /** The Sick LD IP address */
+    /** The Sick LMS 1xx IP address */
     std::string _sick_ip_address;
 
-    /** The Sick LD TCP port number */
+    /** The Sick LMS 1xx TCP port number */
     uint16_t _sick_tcp_port;
 
-    /** Sick LD socket address structure */
+    /** Sick LMS 1xx socket address struct */
     struct sockaddr_in _sick_inet_address_info;
+
+    /** Sick LMS 1xx configuration struct */
+    sick_lms_1xx_scan_config_t _sick_scan_config;
     
     /** Setup the connection parameters and establish TCP connection! */
     void _setupConnection( ) throw( SickIOException, SickTimeoutException );  
@@ -104,8 +120,34 @@ namespace SickToolbox {
     void _teardownConnection( ) throw( SickIOException );
 
     /** Acquire the Sick LMS's status */
-    void _getSickStatus() throw( SickTimeoutException, SickIOException );
+    void _getSickStatus( sick_lms_1xx_status_t &sick_status, bool &temp_status ) throw( SickTimeoutException, SickIOException );
 
+    /** Acquire the Sick LMS's scan config */
+    void _getSickScanConfig( ) throw( SickTimeoutException, SickIOException );
+
+    /** Set access mode for configuring device */
+    bool _setAuthorizedClientAccessMode() throw( SickTimeoutException, SickIOException );
+    
+    /** Send the message and grab expected reply */
+    void _sendMessageAndGetReply( const SickLMS1xxMessage &send_message,
+				  SickLMS1xxMessage &recv_message,
+				  const std::string reply_command_code,
+				  const std::string reply_command,
+				  const unsigned int timeout_value = DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT,
+				  const unsigned int num_tries = 1 ) throw( SickIOException, SickTimeoutException );
+
+    /** Utility function to convert int to status */
+    sick_lms_1xx_status_t _intToSickStatus( const int status ) const;
+
+    /** Utility function to convert config error int to str */
+    std::string _intToSickConfigErrorStr( const int error ) const;
+
+    /** Utility function for printing Sick scan config */
+    void _printSickScanConfig( ) const;
+    
+    /** Utility function for printing footer after initialization */
+    void _printInitFooter( ) const;
+    
   };
 
   /*!

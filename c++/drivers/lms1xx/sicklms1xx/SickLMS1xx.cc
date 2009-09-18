@@ -48,10 +48,12 @@ namespace SickToolbox {
    * \param sick_tcp_port The TCP port associated w/ the Sick LD server
    */
   SickLMS1xx::SickLMS1xx( const std::string sick_ip_address, const uint16_t sick_tcp_port ) :
-    //SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >( ),
+    SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >( ),
     _sick_ip_address(sick_ip_address),
     _sick_tcp_port(sick_tcp_port)
-  { }
+  {
+    memset(&_sick_scan_config,0,sizeof(sick_lms_1xx_scan_config_t));
+  }
 
   /**
    * A standard destructor
@@ -59,7 +61,7 @@ namespace SickToolbox {
   SickLMS1xx::~SickLMS1xx( ) { }
 
   /**
-   * \brief Initializes the driver and syncs it with Sick LD unit. Uses sector config given in flash.
+   * \brief Initializes the driver and syncs it with Sick LMS 1xx unit. Uses flash params.
    */
   void SickLMS1xx::Initialize( ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException ) {
 
@@ -78,9 +80,9 @@ namespace SickToolbox {
       std::cout << "\t\tBuffer monitor started!" << std::endl;
     
       /* Ok, lets sync the driver with the Sick */
-      std::cout << "\tAttempting to get device status..." << std::endl;
-      //_syncDriverWithSick();
-      _getSickStatus();
+      std::cout << "\tSyncing driver with Sick..." << std::endl;
+      _getSickScanConfig();
+      std::cout << "\t\tSuccess!" << std::endl;
       
     }
     
@@ -105,11 +107,170 @@ namespace SickToolbox {
     }
     
     //std::cout << "\t\tSynchronized!" << std::endl;
-
     _sick_initialized = true;
-    //_printInitFooter();
+    
+    _printInitFooter();
+    
+    /* Success */
+  }
+
+  /**
+   * \brief Get the scan configuration of the Sick LMS 1xx
+   */
+  void SickLMS1xx::SetSickScanConfig( ) throw( SickTimeoutException, SickIOException, SickConfigException ) {
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+
+    std::cout << "\t*** Attempting to configure device..." << std::endl;
+    
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'M';
+    payload_buffer[2]  = 'N';
+    
+    payload_buffer[3]  = ' ';
+
+    /* Set the command */
+    payload_buffer[4]  = 'm';
+    payload_buffer[5]  = 'L';
+    payload_buffer[6]  = 'M';
+    payload_buffer[7]  = 'P';
+    payload_buffer[8]  = 's';
+    payload_buffer[9]  = 'e';
+    payload_buffer[10] = 't';
+    payload_buffer[11] = 's';
+    payload_buffer[12] = 'c';
+    payload_buffer[13] = 'a';
+    payload_buffer[14] = 'n';
+    payload_buffer[15] = 'c';
+    payload_buffer[16] = 'f';
+    payload_buffer[17] = 'g';
+
+    payload_buffer[18] = ' ';    
+
+    /* Desired scanning frequency */
+    payload_buffer[19] = '+';    
+    payload_buffer[20] = '2';
+    payload_buffer[21] = '5';
+    payload_buffer[22] = '0';
+    payload_buffer[23] = '0';
+
+    payload_buffer[24] = ' ';    
+
+    /* Desired number of segments (always 1) */
+    payload_buffer[25] = '+';
+    payload_buffer[26] = '1';
+
+    payload_buffer[27] = ' ';    
+    
+    /* Desired angular resolution */
+    payload_buffer[28] = '+';   
+    payload_buffer[29] = '5';
+    payload_buffer[30] = '0';
+    payload_buffer[31] = '0';
+    payload_buffer[32] = '0';
+
+    payload_buffer[33] = ' ';
+
+    /* Desired starting angle */
+    payload_buffer[34] = '-';    
+    payload_buffer[35] = '4';
+    payload_buffer[36] = '4';
+    payload_buffer[37] = '2';
+    payload_buffer[38] = '2';
+    payload_buffer[39] = '0';    
+    payload_buffer[40] = '0';
+    
+    payload_buffer[41] = ' ';
+
+    /* Desired stopping angle */
+    payload_buffer[42] = '+';    
+    payload_buffer[43] = '2';
+    payload_buffer[44] = '2';    
+    payload_buffer[45] = '4';
+    payload_buffer[46] = '3';
+    payload_buffer[47] = '0';
+    payload_buffer[48] = '0';
+    payload_buffer[49] = '0';        
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,50);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    /* Set access mode and send configuration */
+    try {
+
+      /* Set the authorized client access mode */
+      if (!_setAuthorizedClientAccessMode()) {
+	throw SickIOException("SickLMS1xx::SetSickScanConfig: _setAuthorizedClientAccessMode failed!");	
+      }
+      
+      _sendMessageAndGetReply(send_message, recv_message, "sAN", "mLMPsetscancfg");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Reset the buffer (not necessary, but its better to do so just in case) */
+    memset(payload_buffer,0,SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1);
+  
+    /* Extract the message payload */
+    recv_message.GetPayload(payload_buffer);
+    
+    /* Check if it worked... */
+    if (payload_buffer[19] != '0') {
+	throw SickConfigException("SickLMS1xx::SetSickScanConfig: " + _intToSickConfigErrorStr(atoi((char *)&payload_buffer[19])));	      
+    }
+
+    /* Update the scan configuration! */
+    try {
+
+      _getSickScanConfig();
+      
+    }
+
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanConfig: Unknown exception!!!" << std::endl;
+      throw;
+    }
 
     /* Success */
+    std::cout << "\t\tDevice configured!" << std::endl << std::endl;
+
+    _printSickScanConfig();
+    
   }
 
   /**
@@ -308,7 +469,7 @@ namespace SickToolbox {
   /**
    * \brief Get the status of the Sick LD
    */
-  void SickLMS1xx::_getSickStatus( ) throw( SickTimeoutException, SickIOException ) {
+  void SickLMS1xx::_getSickStatus( sick_lms_1xx_status_t &sick_status, bool &temp_status ) throw( SickTimeoutException, SickIOException ) {
 
     /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
@@ -330,31 +491,13 @@ namespace SickToolbox {
     /* Construct command message */
     SickLMS1xxMessage send_message(payload_buffer,9);
 
-    /* Setup recv message */
-    const uint8_t recv_message_header[10] = {0x02,
-					      's',
-				              'R',
-				              'A',
-				              ' ',
-				              'S',
-				              'T',
-				              'l',
-				              'm',
-				              's'};
-    
     /* Setup container for recv message */
     SickLMS1xxMessage recv_message;
 
     /* Send message and get reply using parent's method */
     try {
       
-      SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >::_sendMessageAndGetReply(send_message,
-										       recv_message,
-										       recv_message_header,
-										       sizeof(recv_message_header),
-										       0,
-										       DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT,
-										       1);
+      _sendMessageAndGetReply(send_message, recv_message, "sRA", "STlms");
 
     }
         
@@ -382,10 +525,363 @@ namespace SickToolbox {
     /* Extract the message payload */
     recv_message.GetPayload(payload_buffer);
 
-    //recv_message.Print();
-    
+    sick_status = _intToSickStatus(atoi((char *)&payload_buffer[10])); // (sick_lms_1xx_status_t)payload_buffer[11];
+    temp_status = (bool)atoi((char *)&payload_buffer[12]);
+
     /* Success */
 
   }
 
+  /**
+   * \brief Get the scan configuration of the Sick LMS 1xx
+   */
+  void SickLMS1xx::_getSickScanConfig( ) throw( SickTimeoutException, SickIOException ) {
+				      
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'R';
+    payload_buffer[2]  = 'N';
+    
+    payload_buffer[3]  = ' ';
+
+    /* Set the command */
+    payload_buffer[4]  = 'L';
+    payload_buffer[5]  = 'M';
+    payload_buffer[6]  = 'P';
+    payload_buffer[7]  = 's';
+    payload_buffer[8]  = 'c';
+    payload_buffer[9]  = 'a';
+    payload_buffer[10] = 'n';
+    payload_buffer[11] = 'c';
+    payload_buffer[12] = 'f';
+    payload_buffer[13] = 'g';    
+
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,14);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    /* Send message and get reply using parent's method */
+    try {
+      
+      _sendMessageAndGetReply(send_message, recv_message, "sRA", "LMPscancfg");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Reset the buffer (not necessary, but its better to do so just in case) */
+    memset(payload_buffer,0,14);
+  
+    /* Extract the message payload */
+    recv_message.GetPayloadAsCStr((char *)payload_buffer);
+
+    /* Utility variables */
+    uint32_t scan_freq = 0, scan_res = 0;
+    uint32_t start_angle = 0, stop_angle = 0;
+    
+    /*
+     * Grab the scanning frequency
+     */
+    const char * token = NULL;
+    if ((token = strtok((char *)&payload_buffer[15]," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: strtok() failed!");
+    }
+
+    if (sscanf(token,"%x",&scan_freq) == EOF) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: sscanf() failed!");
+    }
+
+    scan_freq = sick_lms_1xx_to_host_byte_order(scan_freq);
+
+    /* Ignore the number of segments value (its always 1 for the LMS 1xx) */
+    if ((token = strtok(NULL," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: strtok() failed!");
+    }
+
+    /*
+     * Grab the angular resolution
+     */    
+    if ((token = strtok(NULL," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: strtok() failed!");
+    }
+    
+    if (sscanf(token,"%x",&scan_res) == EOF) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: sscanf() failed!");
+    }
+    
+    scan_res = sick_lms_1xx_to_host_byte_order(scan_res);
+
+    /*
+     * Grab the start angle
+     */    
+    if ((token = strtok(NULL," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: strtok() failed!");
+    }
+    
+    if (sscanf(token,"%x",&start_angle) == EOF) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: sscanf() failed!");
+    }
+    
+    start_angle = sick_lms_1xx_to_host_byte_order(start_angle);
+
+    /*
+     * Grab the stop angle
+     */    
+    if ((token = strtok(NULL," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: strtok() failed!");
+    }
+    
+    if (sscanf(token,"%x",&stop_angle) == EOF) {
+      throw SickIOException("SickLMS1xx::_getSickConfig: sscanf() failed!");
+    }
+    
+    stop_angle = sick_lms_1xx_to_host_byte_order(stop_angle);
+
+    /*
+     * Assign the config values!
+     */
+    _sick_scan_config.sick_scan_freq = scan_freq;
+    _sick_scan_config.sick_scan_res = scan_res;
+    _sick_scan_config.sick_start_angle = start_angle;
+    _sick_scan_config.sick_stop_angle = stop_angle;
+    
+    /* Success */
+
+  }  
+
+  /**
+   * \brief Login as an authorized client
+   */
+  bool SickLMS1xx::_setAuthorizedClientAccessMode() throw( SickTimeoutException, SickIOException ) {
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+    
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'M';
+    payload_buffer[2]  = 'N';
+    
+    payload_buffer[3]  = ' ';
+
+    /* Set the command */
+    payload_buffer[4]  = 'S';
+    payload_buffer[5]  = 'e';
+    payload_buffer[6]  = 't';
+    payload_buffer[7]  = 'A';
+    payload_buffer[8]  = 'c';
+    payload_buffer[9]  = 'c';
+    payload_buffer[10] = 'e';
+    payload_buffer[11] = 's';
+    payload_buffer[12] = 's';
+    payload_buffer[13] = 'M';
+    payload_buffer[14] = 'o';
+    payload_buffer[15] = 'd';
+    payload_buffer[16] = 'e';    
+
+    payload_buffer[17] = ' ';
+    
+    /* Set as authorized client */
+    payload_buffer[18] = '0';
+    payload_buffer[19] = '3';
+
+    payload_buffer[20] = ' ';
+
+    /* Encoded value for client */
+    payload_buffer[21] = 'F';
+    payload_buffer[22] = '4';
+    payload_buffer[23] = '7';
+    payload_buffer[24] = '2';
+    payload_buffer[25] = '4';
+    payload_buffer[26] = '7';
+    payload_buffer[27] = '4';
+    payload_buffer[28] = '4';
+
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,29);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    /* Send message and get reply using parent's method */
+    try {
+      
+      _sendMessageAndGetReply(send_message, recv_message, "sAN", "SetAccessMode");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_setAuthorizedClientAccessMode: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Reset the buffer (not necessary, but its better to do so just in case) */
+    memset(payload_buffer,0,29);
+    
+    /* Extract the message payload */
+    recv_message.GetPayload(payload_buffer);
+
+    /* Check Response */
+    if (payload_buffer[18] != '1') {
+      std::cerr << "SickLMS1xx::_setAuthorizedClientAccessMode: Setting Access Mode Failed!" << std::endl;    
+      return false;
+    }
+
+    /* Success! Woohoo! */
+    return true;
+    
+  }
+  
+  /**
+   * \brief Sends a message and searches for the reply with given command type and command
+   * \param &send_message The message to be sent to the Sick LMS 2xx unit
+   * \param &recv_message The expected message reply from the Sick LMS
+   * \param reply_command_code The expected command code for the recv_message
+   * \param reply_command The expected command for the recv_message
+   * \param timeout_value The epoch to wait before considering a sent frame lost (in usecs)
+   * \param num_tries The number of times to send the message in the event the LMS fails to reply
+   */
+  void SickLMS1xx::_sendMessageAndGetReply( const SickLMS1xxMessage &send_message,
+					    SickLMS1xxMessage &recv_message,
+					    const std::string reply_command_type,
+					    const std::string reply_command,
+					    const unsigned int timeout_value,
+					    const unsigned int num_tries ) throw( SickIOException, SickTimeoutException ) {
+
+    /* Construct the expected string */
+    std::string expected_str = reply_command_type + " " + reply_command;
+    
+    try {
+
+      /* Send a message and get reply using parent's method */
+      SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >::_sendMessageAndGetReply(send_message,recv_message,(uint8_t *)expected_str.c_str(),expected_str.length(),DEFAULT_SICK_LMS_1XX_BYTE_TIMEOUT,timeout_value,num_tries);
+
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout) {
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_error) {
+      std::cerr << sick_io_error.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+  }
+  
+  /**
+   * \brief Converts int to status
+   * \param status integer corresponding to sick status
+   */
+  sick_lms_1xx_status_t SickLMS1xx::_intToSickStatus( const int status ) const
+  {
+    switch(status) {
+    case 1:
+      return SICK_LMS_1XX_STATUS_INITIALIZATION;
+    case 2:
+      return SICK_LMS_1XX_STATUS_CONFIGURATION;
+    case 3:
+      return SICK_LMS_1XX_STATUS_IDLE;
+    case 4:
+      return SICK_LMS_1XX_STATUS_ROTATED;
+    case 5:
+      return SICK_LMS_1XX_STATUS_IN_PREP;
+    case 6:
+      return SICK_LMS_1XX_STATUS_READY;
+    case 7:
+      return SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT;
+    default:
+      return SICK_LMS_1XX_STATUS_UNDEFINED;
+    }
+  }
+
+  /** Utility function to convert config error int to str */
+  std::string SickLMS1xx::_intToSickConfigErrorStr( const int error ) const {
+
+    switch(error) {
+    case 1:
+      return "Invalid frequency";
+    case 2:
+      return "Invalid angular resolution";
+    case 3:
+      return "Invalid frequency and angular resolution";
+    case 4:
+      return "Invalid scan area";
+    case 5:
+      return "Other error";
+    default:
+      return "Unrecognized error code";
+    }
+  
+  }
+
+  /**
+   * \brief Prints Sick LMS 1xx scan configuration
+   */
+  void SickLMS1xx::_printSickScanConfig( ) const {
+  
+    std::cout << "\t========= Sick Scan Config =========" << std::endl;
+    std::cout << "\tScan Frequency: " << ((double)_sick_scan_config.sick_scan_freq)/100 << "(Hz)" << std::endl;  
+    std::cout << "\tScan Resolution: " << ((double)_sick_scan_config.sick_scan_res)/10000 << " (deg)" << std::endl;  
+    std::cout << "\tScan Area: " << "[" << ((double)_sick_scan_config.sick_start_angle)/10000 << "," << ((double)_sick_scan_config.sick_stop_angle)/10000 << "]" << std::endl;
+    std::cout << "\t====================================" << std::endl;
+    std::cout << std::flush;
+  }
+  
+  /**
+   * \brief Prints the initialization footer.
+   */
+  void SickLMS1xx::_printInitFooter( ) const {
+
+    std::cout << "\t*** Init. complete: Sick LMS 1xx is online and ready!" << std::endl; 
+    std::cout << "\tScan Frequency: " << ((double)_sick_scan_config.sick_scan_freq)/100 << "(Hz)" << std::endl;  
+    std::cout << "\tScan Resolution: " << ((double)_sick_scan_config.sick_scan_res)/10000 << " (deg)" << std::endl;
+    std::cout << "\tScan Area: " <<  "[" << ((double)_sick_scan_config.sick_start_angle)/10000 << "," << ((double)_sick_scan_config.sick_stop_angle)/10000 << "]" << std::endl;
+    std::cout << std::endl;
+    
+  }
+  
 } //namespace SickToolbox

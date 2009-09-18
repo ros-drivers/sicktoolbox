@@ -58,6 +58,9 @@ namespace SickToolbox {
     
     /** Get the service sub-code associated with the message */
     std::string GetCommand( ) const { return _command; }
+
+    /** Reset the data associated with this message (for initialization purposes) */
+    void Clear( );
     
     /** A debugging function that prints the contents of the frame. */
     void Print( ) const;
