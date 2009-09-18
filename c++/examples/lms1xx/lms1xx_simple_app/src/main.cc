@@ -40,9 +40,21 @@ int main(int argc, char* argv[])
     return -1;
   }
 
-  cout << "Sleeping!" << endl;
-  sleep(2);
 
+  try {
+    sick_lms_1xx.SetSickScanConfig();
+  }
+
+  catch(SickConfigException sick_exception) {
+    std::cout << sick_exception.what() << std::endl;
+  }
+  
+  catch(...) {
+    cerr << "An Error Occurred!" << endl;
+    return -1;
+  }
+  
+  
   /*
    * Uninitialize the device
    */
