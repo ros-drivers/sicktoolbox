@@ -42,7 +42,9 @@ int main(int argc, char* argv[])
 
 
   try {
-    sick_lms_1xx.SetSickScanConfig();
+    sick_lms_1xx.SetSickScanFreqAndRes(SickLMS1xx::SICK_LMS_1XX_SCAN_FREQ_25,
+				       SickLMS1xx::SICK_LMS_1XX_SCAN_RES_25);
+    sick_lms_1xx.SetSickScanArea(-450000,2250000);
   }
 
   catch(SickConfigException sick_exception) {
