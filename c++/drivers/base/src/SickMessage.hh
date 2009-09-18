@@ -57,6 +57,9 @@ namespace SickToolbox {
     /** Returns a copy of the raw message payload */
     void GetPayload( uint8_t * const payload_buffer ) const;
 
+    /** Returns a copy of the payload as a C String */
+    void GetPayloadAsCStr( char * const payload_str ) const;
+    
     /** Returns a subregion of the payload specified by indices */
     void GetPayloadSubregion( uint8_t * const payload_sub_buffer, const unsigned int start_idx,
 			      const unsigned int stop_idx ) const;
@@ -154,6 +157,13 @@ namespace SickToolbox {
     memcpy(payload_buffer,&_message_buffer[MESSAGE_HEADER_LENGTH],_payload_length);
   }
 
+  /** Returns a copy of the payload as a C String */
+  template< unsigned int MSG_HEADER_LENGTH, unsigned int MSG_PAYLOAD_MAX_LENGTH, unsigned int MSG_TRAILER_LENGTH >
+  void SickMessage< MSG_HEADER_LENGTH, MSG_PAYLOAD_MAX_LENGTH, MSG_TRAILER_LENGTH >::GetPayloadAsCStr( char * const payload_buffer ) const {
+    memcpy(payload_buffer,&_message_buffer[MESSAGE_HEADER_LENGTH],_payload_length);
+    payload_buffer[_payload_length] = '\0';
+  }
+  
   /**
    * \brief Get a specified sub-region of the payload buffer
    * \param *payload_sub_buffer Destination buffer for message payload contents
