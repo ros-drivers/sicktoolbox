@@ -327,7 +327,7 @@ namespace SickToolbox {
    * \param &sick_message A reference to the container that will hold the most recent message
    * \param *byte_sequence The byte sequence that is expected to lead off the payload in the packet (e.g. service codes, etc...)
    * \param byte_sequence_length The number of bytes in the given byte_sequence
-   * \param timeout_value The time in secs to wait before throwing a timeout error
+   * \param timeout_value The time in usecs to wait before throwing a timeout error
    * \return True if a new message was received, False otherwise
    *
    * NOTE: This method is intended to be a helper for _sendMessageAndGetReply
@@ -373,7 +373,7 @@ namespace SickToolbox {
       
       /* Sleep a little bit */
       usleep(1000);     
-      
+
       /* Check whether the allowed time has expired */
       gettimeofday(&end_time,NULL);        
       if (_computeElapsedTime(beg_time,end_time) > timeout_value) {
@@ -405,18 +405,18 @@ namespace SickToolbox {
     for(unsigned int i = 0; i < num_tries; i++) {
 
       try {
-      
+
 	/* Send the frame to the unit */
 	_sendMessage(send_message,byte_interval);
 	
 	/* Wait for the reply! */
 	_recvMessage(recv_message,byte_sequence,byte_sequence_length,timeout_value);
-	
+
 	/* message was found! */
 	break;
 
       }
-      
+
       /* Handle a timeout! */
       catch (SickTimeoutException &sick_timeout) {
 	
