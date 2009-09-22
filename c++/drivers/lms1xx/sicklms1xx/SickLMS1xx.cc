@@ -50,7 +50,10 @@ namespace SickToolbox {
   SickLMS1xx::SickLMS1xx( const std::string sick_ip_address, const uint16_t sick_tcp_port ) :
     SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >( ),
     _sick_ip_address(sick_ip_address),
-    _sick_tcp_port(sick_tcp_port)
+    _sick_tcp_port(sick_tcp_port),
+    _sick_device_status(SICK_LMS_1XX_STATUS_UNDEFINED),
+    _sick_temp_safe(false),
+    _sick_streaming(false)
   {
     memset(&_sick_scan_config,0,sizeof(sick_lms_1xx_scan_config_t));
   }
@@ -123,6 +126,11 @@ namespace SickToolbox {
   void SickLMS1xx::SetSickScanFreqAndRes( const sick_lms_1xx_scan_freq_t scan_freq,
 					  const sick_lms_1xx_scan_res_t scan_res ) throw( SickTimeoutException, SickIOException, SickConfigException ) {
 
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::SetSickScanFreqAndRes: Device NOT Initialized!!!");
+    }
+    
     try {
 
       /* Set the desired configuration */
@@ -167,6 +175,11 @@ namespace SickToolbox {
   void SickLMS1xx::SetSickScanArea( const int scan_start_angle,
 				    const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException ) {
 
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::SetSickScanArea: Device NOT Initialized!!!");
+    }
+    
     try {
 
       /* Set the desired configuration */
@@ -174,7 +187,7 @@ namespace SickToolbox {
 			 _sick_scan_config.sick_scan_res,
 			 scan_start_angle,
 			 scan_stop_angle);
-      
+    
     }
 
     /* Handle config exceptions */
@@ -202,6 +215,300 @@ namespace SickToolbox {
     }
     
   }
+
+  /**
+   * \brief Acquire single pulse Sick range measurements
+   */
+  void SickLMS1xx::GetSickRangeMeasurements( unsigned int * const range_vals,
+					     unsigned int &num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
+    
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: Device NOT Initialized!!!");
+    }
+    
+    try {
+
+      /* Is the device already streaming? */
+      if (!_sick_streaming) {
+	_requestDataStreamByType(SICK_LMS_1XX_DIST_SINGLE_PULSE,SICK_LMS_1XX_REFLECT_NO);
+      }
+
+    }
+
+    /* Handle config exceptions */
+    catch (SickConfigException &sick_config_exception) {
+      std::cerr << sick_config_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+
+    /* Allocate receive message */
+    SickLMS1xxMessage recv_message;
+    
+    try {
+
+      /* Grab the next message from the stream */
+      _recvMessage(recv_message);
+
+    }
+
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+
+    recv_message.GetPayloadAsCStr((char *)payload_buffer);
+
+    /* Locate DIST1 Section */
+    const char * substr = "DIST1";
+    unsigned int substr_pos = 0;
+    if (!_findSubString((char *)payload_buffer,substr,recv_message.GetPayloadLength()+1,5,substr_pos)) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: _findSubString() failed!");
+    }
+
+    /* Extract Num DIST1 Values */
+    unsigned int pos = substr_pos;
+    for (unsigned int k = 0; k < 5; pos++) {
+      if (payload_buffer[pos] == ' ') {
+    	k++;
+      }
+    }
+
+    const char * token = NULL;
+    uint32_t num_dist_vals = 0;
+    if ((token = strtok((char *)&payload_buffer[pos]," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: strtok() failed!");
+    }
+
+    if (sscanf(token,"%x",&num_dist_vals) == EOF) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: sscanf() failed!");
+    }
+
+    num_dist_vals = sick_lms_1xx_to_host_byte_order(num_dist_vals);
+
+    /* Extract DIST1 Values */
+    uint32_t curr_dist_val = 0;
+    for (unsigned int i = 0; i < num_dist_vals; i++) {
+
+      /* Grab next value */
+      if ((token = strtok(NULL," ")) == NULL) {
+	throw SickIOException("SickLMS1xx::GetSickMeas: strtok() failed!");
+      }
+      
+      /* Convert to decimal (in lms order) */
+      if (sscanf(token,"%x",&curr_dist_val) == EOF) {
+      	throw SickIOException("SickLMS1xx::GetSickMeas: sscanf() failed!");	
+      }
+
+      /* Convert to host_order */
+      range_vals[i] = (unsigned int)sick_lms_1xx_to_host_byte_order(curr_dist_val);
+      
+    }
+
+    num_measurements = num_dist_vals;
+
+    /* Success !*/
+    
+  }
+  
+  /**
+   * \brief Acquire multi-pulse sick range measurements
+   */
+  void SickLMS1xx::GetSickRangeMeasurements( unsigned int * const range_1_vals,
+					     unsigned int * const range_2_vals,
+					     unsigned int &num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
+    
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: Device NOT Initialized!!!");
+    }
+    
+    try {
+
+      /* Is the device already streaming? */
+      if (!_sick_streaming) {
+	_requestDataStreamByType(SICK_LMS_1XX_DIST_MULTI_PULSE,SICK_LMS_1XX_REFLECT_NO);
+      }
+
+    }
+
+    /* Handle config exceptions */
+    catch (SickConfigException &sick_config_exception) {
+      std::cerr << sick_config_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Allocate receive message */
+    SickLMS1xxMessage recv_message;
+    
+    try {
+
+      /* Grab the next message from the stream */
+      _recvMessage(recv_message);
+
+    }
+
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+
+    recv_message.GetPayloadAsCStr((char *)payload_buffer);
+
+    /* Locate DIST1 Section */
+    const char * substr_1 = "DIST1";
+    unsigned int substr_pos_1 = 0;
+    if (!_findSubString((char *)payload_buffer,substr_1,recv_message.GetPayloadLength()+1,5,substr_pos_1)) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: _findSubString() failed!");
+    }
+
+    /* Extract Num DIST1 Values */
+    unsigned int pos = substr_pos_1;
+    for (unsigned int k = 0; k < 5; pos++) {
+      if (payload_buffer[pos] == ' ') {
+    	k++;
+      }
+    }
+
+    const char * token = NULL;
+    uint32_t num_dist_1_vals = 0;
+    if ((token = strtok((char *)&payload_buffer[pos]," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: strtok() failed!");
+    }
+
+    if (sscanf(token,"%x",&num_dist_1_vals) == EOF) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: sscanf() failed!");
+    }
+
+    num_dist_1_vals = sick_lms_1xx_to_host_byte_order(num_dist_1_vals);
+
+    /* Extract DIST1 Values */
+    uint32_t curr_dist_1_val = 0;
+    for (unsigned int i = 0; i < num_dist_1_vals; i++) {
+
+      /* Grab next value */
+      if ((token = strtok(NULL," ")) == NULL) {
+	throw SickIOException("SickLMS1xx::GetSickMeas: strtok() failed!");
+      }
+      
+      /* Convert to decimal (in lms order) */
+      if (sscanf(token,"%x",&curr_dist_1_val) == EOF) {
+      	throw SickIOException("SickLMS1xx::GetSickMeas: sscanf() failed!");	
+      }
+
+      /* Convert to host_order */
+      range_1_vals[i] = (unsigned int)sick_lms_1xx_to_host_byte_order(curr_dist_1_val);
+      
+    }
+    
+    /* Locate DIST2 Section */
+    const char * substr_2 = "DIST2";
+    unsigned int substr_pos_2 = 0;
+    if (!_findSubString((char *)payload_buffer,substr_2,recv_message.GetPayloadLength()+1,5,substr_pos_2,substr_pos_1)) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: _findSubString() failed!");
+    }
+
+    /* Extract Num DIST2 Values */
+    pos = substr_pos_2;
+    for (unsigned int k = 0; k < 5; pos++) {
+      if (payload_buffer[pos] == ' ') {
+    	k++;
+      }
+    }
+
+    token = NULL;
+    uint32_t num_dist_2_vals = 0;
+    if ((token = strtok((char *)&payload_buffer[pos]," ")) == NULL) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: strtok() failed!");
+    }
+
+    if (sscanf(token,"%x",&num_dist_2_vals) == EOF) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: sscanf() failed!");
+    }
+
+    num_dist_2_vals = sick_lms_1xx_to_host_byte_order(num_dist_2_vals);
+    
+    /* Extract DIST2 Values */
+    uint32_t curr_dist_2_val = 0;
+    for (unsigned int i = 0; i < num_dist_2_vals; i++) {
+
+      /* Grab next value */
+      if ((token = strtok(NULL," ")) == NULL) {
+	throw SickIOException("SickLMS1xx::GetSickMeas: strtok() failed!");
+      }
+      
+      /* Convert to decimal (in lms order) */
+      if (sscanf(token,"%x",&curr_dist_2_val) == EOF) {
+      	throw SickIOException("SickLMS1xx::GetSickMeas: sscanf() failed!");	
+      }
+
+      /* Convert to host_order */
+      range_2_vals[i] = (unsigned int)sick_lms_1xx_to_host_byte_order(curr_dist_2_val);
+      
+    }
+
+    /* A sanity check... */
+    if (num_dist_1_vals != num_dist_2_vals) {
+      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: Inconsistent number of measurements!");
+    }
+    
+    /* Assign number of measurements */
+    num_measurements = num_dist_1_vals;
+    
+  }
   
   /**
    * \brief Tear down the connection between the host and the Sick LD
@@ -217,14 +524,12 @@ namespace SickToolbox {
   
     /* If necessary, tell the Sick LD to stop streaming data */
     try {
+
+      /* Is the device streaming? */
+      if (_sick_streaming) {
+	_stopStreamingMeasurements();
+      }
       
-      //std::cout << "\tSetting Sick LD to idle mode..." << std::endl;
-      //_setSickSensorModeToIdle();
-      //std::cout << "\t\tSick LD is now idle!" << std::endl;
-
-      /* Clear any signals that were set */
-      //SetSickSignals();
-
       /* Attempt to cancel the buffer monitor */
       std::cout << "\tAttempting to cancel buffer monitor..." << std::endl;
       _stopListening();
@@ -262,7 +567,7 @@ namespace SickToolbox {
     
     /* A safety net */
     catch (...) {
-      std::cerr << "SickLMS::_setSickSensorMode: Unknown exception!!!" << std::endl;
+      std::cerr << "SickLMS::Uninitialize: Unknown exception!!!" << std::endl;
       throw;
     }  
 
@@ -399,7 +704,7 @@ namespace SickToolbox {
   /**
    * \brief Get the status of the Sick LD
    */
-  void SickLMS1xx::_getSickStatus( sick_lms_1xx_status_t &sick_status, bool &temp_status ) throw( SickTimeoutException, SickIOException ) {
+  void SickLMS1xx::_updateSickStatus( ) throw( SickTimeoutException, SickIOException ) {
 
     /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
@@ -455,8 +760,8 @@ namespace SickToolbox {
     /* Extract the message payload */
     recv_message.GetPayload(payload_buffer);
 
-    sick_status = _intToSickStatus(atoi((char *)&payload_buffer[10])); // (sick_lms_1xx_status_t)payload_buffer[11];
-    temp_status = (bool)atoi((char *)&payload_buffer[12]);
+    _sick_device_status = _intToSickStatus(atoi((char *)&payload_buffer[10])); // (sick_lms_1xx_status_t)payload_buffer[11];
+    _sick_temp_safe = (bool)atoi((char *)&payload_buffer[12]);
 
     /* Success */
 
@@ -468,7 +773,7 @@ namespace SickToolbox {
   void SickLMS1xx::_getSickScanConfig( ) throw( SickTimeoutException, SickIOException ) {
 				      
     /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
 
     /* Set the command type */
     payload_buffer[0]  = 's';
@@ -620,7 +925,7 @@ namespace SickToolbox {
     }
     
     /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
 
     std::cout << "\t*** Attempting to configure device..." << std::endl;
     
@@ -742,7 +1047,7 @@ namespace SickToolbox {
     }
     
     /* Reset the buffer (not necessary, but its better to do so just in case) */
-    memset(payload_buffer,0,SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1);
+    memset(payload_buffer,0,SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH);
   
     /* Extract the message payload */
     recv_message.GetPayload(payload_buffer);
@@ -754,15 +1059,6 @@ namespace SickToolbox {
 
     std::cout << "\t\tDevice configured!" << std::endl << std::endl;
     
-    /* Write to EEPROM? */
-    //if (write_to_eeprom) {
-
-    //  std::cout << std::endl;
-    //  std::cout << "\t*** Saving Configuration to EEPROM..." << std::endl;
-    //  std::cout << "\t\tConfiguration saved!" << std::endl << std::endl;
-      
-    //}
-
     /* Update the scan configuration! */
     try {
 
@@ -800,7 +1096,7 @@ namespace SickToolbox {
   bool SickLMS1xx::_setAuthorizedClientAccessMode() throw( SickTimeoutException, SickIOException ) {
 
     /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
     
     /* Set the command type */
     payload_buffer[0]  = 's';
@@ -896,7 +1192,7 @@ namespace SickToolbox {
   void SickLMS1xx::_writeToEEPROM( ) throw( SickTimeoutException, SickIOException ) {
 
     /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
     
     /* Set the command type */
     payload_buffer[0]  = 's';
@@ -970,6 +1266,606 @@ namespace SickToolbox {
   }
 
   /**
+   * \brief Tell the device to start measuring
+   */
+  void SickLMS1xx::_startMeasuring( ) throw( SickTimeoutException, SickIOException ) {
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+    
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'M';
+    payload_buffer[2]  = 'N';
+    
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'L';
+    payload_buffer[5]  = 'M';
+    payload_buffer[6]  = 'C';
+    payload_buffer[7]  = 's';
+    payload_buffer[8]  = 't';
+    payload_buffer[9]  = 'a';
+    payload_buffer[10] = 'r';
+    payload_buffer[11] = 't';
+    payload_buffer[12] = 'm';
+    payload_buffer[13] = 'e';
+    payload_buffer[14] = 'a';
+    payload_buffer[15] = 's';    
+
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,16);
+    
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    try {
+      
+      /* Send message and get reply */      
+      _sendMessageAndGetReply(send_message, recv_message, "sAN", "LMCstartmeas");
+      
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_startMeasuring: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Reset the buffer (not necessary, but its better to do so just in case) */
+    memset(payload_buffer,0,16);
+
+    /* Extract the message payload */
+    recv_message.GetPayload(payload_buffer);
+    
+    /* Check if it worked... */
+    if (payload_buffer[17] != '0') {
+	throw SickConfigException("SickLMS1xx::_startMeasuring: Unable to start measuring!");	      
+    }
+    
+  }
+
+  /**
+   * \brief Tell the device to start measuring
+   */
+  void SickLMS1xx::_stopMeasuring( ) throw( SickTimeoutException, SickIOException ) {
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+    
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'M';
+    payload_buffer[2]  = 'N';
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'L';
+    payload_buffer[5]  = 'M';
+    payload_buffer[6]  = 'C';
+    payload_buffer[7]  = 's';
+    payload_buffer[8]  = 't';
+    payload_buffer[9]  = 'o';
+    payload_buffer[10] = 'p';
+    payload_buffer[11] = 'm';
+    payload_buffer[12] = 'e';
+    payload_buffer[13] = 'a';
+    payload_buffer[14] = 's';    
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,15);
+    
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+    
+    try {
+      
+      /* Send message and get reply */      
+      _sendMessageAndGetReply(send_message, recv_message, "sAN", "LMCstopmeas");
+      
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_stopMeasuring: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Reset the buffer (not necessary, but its better to do so just in case) */
+    memset(payload_buffer,0,15);
+    
+    /* Extract the message payload */
+    recv_message.GetPayload(payload_buffer);
+    
+    /* Check if it worked... */
+    if (payload_buffer[16] != '0') {
+      throw SickConfigException("SickLMS1xx::_stopMeasuring: Unable to start measuring!");	      
+    }
+    
+  }
+
+  /**
+   * \brief Request a data data stream type
+   * \param dist_opt Desired distance returns (single-pulse or multi-pulse)
+   * \param reflect_opt Desired reflectivity returns (none, 8-bit or 16-bit)
+   */
+  void SickLMS1xx::_requestDataStreamByType( const sick_lms_1xx_dist_opt_t dist_opt,
+					     const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException ) {
+
+    std::cout << "\tRequesting " + _sickScanDataFormatToString(dist_opt,reflect_opt) << " data stream..." << std::endl;
+    
+    try {
+    
+    	/* Set the desired scan config! */
+	_setSickScanDataFormat(dist_opt,reflect_opt);
+
+	/* Wait for device to be measuring */
+	_checkForMeasuringStatus();
+
+	/* Start streaming range values! */
+	_startStreamingMeasurements();
+
+    }
+
+    /* Handle config exceptions */
+    catch (SickConfigException &sick_config_exception) {
+      std::cerr << sick_config_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    std::cout << "\t\tStream started!" << std::endl;
+
+    /* Set the flag */
+    _sick_streaming = true;
+    
+  }
+  
+  /**
+   * \brief Start Streaming Values
+   */
+  void SickLMS1xx::_startStreamingMeasurements( ) throw( SickTimeoutException, SickIOException ) {
+
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+    
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'E';
+    payload_buffer[2]  = 'N';
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'L';
+    payload_buffer[5]  = 'M';
+    payload_buffer[6]  = 'D';
+    payload_buffer[7]  = 's';
+    payload_buffer[8]  = 'c';
+    payload_buffer[9]  = 'a';
+    payload_buffer[10] = 'n';
+    payload_buffer[11] = 'd';
+    payload_buffer[12] = 'a';
+    payload_buffer[13] = 't';
+    payload_buffer[14] = 'a';
+    payload_buffer[15] = ' ';
+
+    /* Start streaming! */
+    payload_buffer[16] = '1';
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,17);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    try {
+
+      /* Send message and get reply */      
+      _sendMessageAndGetReply(send_message, recv_message, "sSN", "LMDscandata");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_startStreamingMeasurements: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Success! */
+    
+  }
+
+  /**
+   * \brief Stop Measurment Stream
+   */
+  void SickLMS1xx::_stopStreamingMeasurements( ) throw( SickTimeoutException, SickIOException ) {
+
+    std::cout << "\tStopping data stream..." << std::endl;
+    
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+    
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'E';
+    payload_buffer[2]  = 'N';
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'L';
+    payload_buffer[5]  = 'M';
+    payload_buffer[6]  = 'D';
+    payload_buffer[7]  = 's';
+    payload_buffer[8]  = 'c';
+    payload_buffer[9]  = 'a';
+    payload_buffer[10] = 'n';
+    payload_buffer[11] = 'd';
+    payload_buffer[12] = 'a';
+    payload_buffer[13] = 't';
+    payload_buffer[14] = 'a';
+    payload_buffer[15] = ' ';
+
+    /* Start streaming! */
+    payload_buffer[16] = '0';
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,17);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    try {
+
+      /* Send message and get reply */      
+      _sendMessage(send_message);
+
+    }
+        
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_stopStreamingMeasurements: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Success! */
+    std::cout << "\t\tStream stopped!" << std::endl;
+    
+  }
+
+  /**
+   * \brief Attempts to set and waits until device has in measuring status
+   * \param timeout_value Timeout value in usecs
+   */
+  void SickLMS1xx::_checkForMeasuringStatus( unsigned int timeout_value ) throw( SickTimeoutException, SickIOException ) {
+
+    /* Timeval structs for handling timeouts */
+    struct timeval beg_time, end_time;
+
+    /* Acquire the elapsed time since epoch */
+    gettimeofday(&beg_time,NULL);
+
+    /* Get device status */
+    _updateSickStatus( );
+    
+    /* Check the shared object */
+    bool first_pass = true;
+    while( _sick_device_status != SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT ) {    
+
+      if (first_pass) {
+
+	try {
+	  
+	  /* Tell the device to start measuring ! */
+	  _startMeasuring( );
+	  first_pass = false;
+	  
+	}
+        
+	/* Handle a timeout! */
+	catch (SickTimeoutException &sick_timeout_exception) {
+	  std::cerr << sick_timeout_exception.what() << std::endl;
+	  throw;
+	}
+	
+	/* Handle write buffer exceptions */
+	catch (SickIOException &sick_io_exception) {
+	  std::cerr << sick_io_exception.what() << std::endl;
+	  throw;
+	}
+	
+	/* A safety net */
+	catch (...) {
+	  std::cerr << "SickLMS1xx::_checkForMeasuringStatus: Unknown exception!!!" << std::endl;
+	  throw;
+	}
+	
+      }
+
+      /* Sleep a little bit */
+      usleep(100000);
+      
+      /* Check whether the allowed time has expired */
+      gettimeofday(&end_time,NULL);    
+      if (_computeElapsedTime(beg_time,end_time) > timeout_value) {
+    	throw SickTimeoutException("SickLMS1xx::_checkForMeasuringStatus: Timeout occurred!");
+      }
+
+      /* Grab the latest device status */
+      _updateSickStatus();
+
+    }
+
+  }
+
+  /**
+   * Set device to output only range values
+   */
+  void SickLMS1xx::_restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException ) {
+
+     /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'M';
+    payload_buffer[2]  = 'N';
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'R';
+    payload_buffer[5]  = 'u';
+    payload_buffer[6]  = 'n';
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,7);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    try {
+
+      /* Set the authorized client access mode */
+      if (!_setAuthorizedClientAccessMode()) {
+	throw SickIOException("SickLMS1xx::_setSickScanDataRangeOnly: _setAuthorizedClientAccessMode failed!");	
+      }
+      
+      /* Send message and get reply */      
+      _sendMessageAndGetReply(send_message, recv_message, "sWA", "LMDscandatacfg");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_restoreMeasuringMode: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    memset(payload_buffer,0,7);
+    recv_message.GetPayload(payload_buffer);
+    
+    /* Check return value */
+    if (payload_buffer[8] != '0') {
+      std::cerr << "SickLMS1xx::_restoreMeasuringMode: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Success! */
+
+  }
+  
+  /**
+   * Set device to output only range values
+   */
+  void SickLMS1xx::_setSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
+					   const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException ) {
+    
+    /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'W';
+    payload_buffer[2]  = 'N';
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'L';
+    payload_buffer[5]  = 'M';
+    payload_buffer[6]  = 'D';
+    payload_buffer[7]  = 's';
+    payload_buffer[8]  = 'c';
+    payload_buffer[9]  = 'a';
+    payload_buffer[10] = 'n';
+    payload_buffer[11] = 'd';
+    payload_buffer[12] = 'a';
+    payload_buffer[13] = 't';
+    payload_buffer[14] = 'a';
+    payload_buffer[15] = 'c';
+    payload_buffer[16] = 'f';
+    payload_buffer[17] = 'g';
+    payload_buffer[18] = ' ';
+
+    /* Specify the channel */
+    payload_buffer[19] = '0'; 
+
+    if (dist_opt == SICK_LMS_1XX_DIST_SINGLE_PULSE) {
+      payload_buffer[20] = '1';
+    }
+    else {
+      payload_buffer[20] = '3';
+    }
+    
+    payload_buffer[21] = ' ';
+
+    /* Values should be 0 */
+    payload_buffer[22] = '0'; 
+    payload_buffer[23] = '0'; 
+    payload_buffer[24] = ' ';
+
+    /* Send remission values? */
+    if (reflect_opt == SICK_LMS_1XX_REFLECT_NO) {
+      payload_buffer[25] = '0';   // 0 = no, 1 = yes
+    }
+    else {
+      payload_buffer[25] = '1';   // 0 = no, 1 = yes
+    }
+    payload_buffer[26] = ' ';
+    
+    /* Remission resolution */
+    if (reflect_opt == SICK_LMS_1XX_REFLECT_16) {
+      payload_buffer[27] = '1';   // 0 = 8bit, 1 = 16bit
+    }
+    else {
+      payload_buffer[27] = '0';   // 0 = 8bit, 1 = 16bit
+    }
+    payload_buffer[28] = ' ';
+    
+    /* Units (always 0) */
+    payload_buffer[29] = '0';
+    payload_buffer[30] = ' ';
+    
+    /* Encoder data? */
+    payload_buffer[31] = '0'; // (00 = no encode data, 01 = channel 1 encoder)
+    payload_buffer[32] = '0';
+    payload_buffer[33] = ' ';
+
+    /* These values should be 0 */
+    payload_buffer[34] = '0';
+    payload_buffer[35] = '0';
+    payload_buffer[36] = ' ';
+
+    /* Send position values? */
+    payload_buffer[37] = '0';  // (0 = no position, 1 = send position)
+    payload_buffer[38] = ' ';
+
+    /* Send device name? */
+    payload_buffer[39] = '0';  // (0 = no, 1 = yes)
+    payload_buffer[40] = ' ';
+
+    /* Send comment? */
+    payload_buffer[41] = '0';  // (0 = no, 1 = yes)
+    payload_buffer[42] = ' ';
+
+    /* Send time info? */
+    payload_buffer[43] = '0';  // (0 = no, 1 = yes)
+    payload_buffer[44] = ' ';
+
+    /* Send time info? */
+    payload_buffer[45] = '+';  // +1 = send all scans, +2 every second scan, etc
+    payload_buffer[46] = '1';
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,47);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    try {
+
+      /* Set the authorized client access mode */
+      if (!_setAuthorizedClientAccessMode()) {
+	throw SickIOException("SickLMS1xx::_setSickScanDataRangeOnly: _setAuthorizedClientAccessMode failed!");	
+      }
+      
+      /* Send message and get reply */      
+      _sendMessageAndGetReply(send_message, recv_message, "sWA", "LMDscandatacfg");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_setSickScanDataRangeOnly: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Success! */
+    
+  }
+  
+  /**
    * \brief Utility function to ensure valid scan area
    */
   bool SickLMS1xx::_validScanArea( const int start_angle, const int stop_angle ) const {
@@ -993,6 +1889,35 @@ namespace SickToolbox {
     return true;
 
   }
+
+  /**
+   * \brief Sends a message without waiting for reply
+   */
+  void SickLMS1xx::_sendMessage( const SickLMS1xxMessage &send_message ) const throw( SickIOException ) {
+
+    try {
+      
+      /* Send a message using parent's method */
+      SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >::_sendMessage(send_message,DEFAULT_SICK_LMS_1XX_BYTE_TIMEOUT);
+      
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_error) {
+      std::cerr << sick_io_error.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Success */
+	
+  }
+
   
   /**
    * \brief Sends a message and searches for the reply with given command type and command
@@ -1028,6 +1953,33 @@ namespace SickToolbox {
     /* Handle write buffer exceptions */
     catch (SickIOException &sick_io_error) {
       std::cerr << sick_io_error.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_sendMessageAndGetReply: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Success! */
+    
+  }
+
+  /** \brief Receive a message
+   *  \param sick_message Reference to container to hold received message
+   */
+  void SickLMS1xx::_recvMessage( SickLMS1xxMessage &sick_message ) const throw ( SickTimeoutException ) {
+
+    try {
+    
+      /* Receive message using parent's method */
+      SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >::_recvMessage(sick_message,DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT);
+
+    }
+
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout) {
       throw;
     }
     
@@ -1084,6 +2036,43 @@ namespace SickToolbox {
   }
 
   /**
+   * \brief Searches a string for a substring
+   * \param str String to be searched
+   * \param substr Substring being sought
+   * \param str_length String's length
+   * \param substr_length Substring's length
+   * \param substr_pos Reference holding the location in the main string where substr was found
+   * \param start_pos Index into main string to indicate where to start searching
+   * \return True if substring found, false otherwise
+   */
+  bool SickLMS1xx::_findSubString( const char * const str, const char * const substr,
+				   const unsigned int str_length, const unsigned int substr_length,
+				   unsigned int &substr_pos, unsigned int start_pos ) const {
+    
+    /* Init substring position */
+    substr_pos = 0;
+    
+    /* Look for the substring */
+    bool substr_found = false;
+    for (unsigned int i = start_pos; !substr_found && (i < (str_length - substr_length) + 1); i++) {
+      
+      unsigned int j = 0;
+      for (unsigned int k = i; (str[k] == substr[j]) && (j < substr_length); k++, j++);
+      
+      if (j == substr_length) {
+	substr_found = true;
+	substr_pos = i;
+      }
+      
+    }
+    
+    /* Found! */
+    return substr_found;
+    
+  }
+  
+  
+  /**
    * \brief Prints Sick LMS 1xx scan configuration
    */
   void SickLMS1xx::_printSickScanConfig( ) const {
@@ -1108,5 +2097,38 @@ namespace SickToolbox {
     std::cout << std::endl;
     
   }
+
+  /**
+   * \brief Utility function for returning scan format as string
+   * \param dist_opt Distance option corresponding to scan format
+   * \param reflect_opt Reflectivity option corresponding to 
+   */
+  std::string SickLMS1xx::_sickScanDataFormatToString( const sick_lms_1xx_dist_opt_t dist_opt,
+						       const sick_lms_1xx_reflect_opt_t reflect_opt ) const {
+    std::string scan_format_str = "";
+
+    /* Determine the type of distance measurements */
+    if (dist_opt == SICK_LMS_1XX_DIST_SINGLE_PULSE) {
+      scan_format_str += "(single-pulse range";
+    }
+    else {
+      scan_format_str += "(double-pulse range";
+    }
+
+    /* Determine the type of reflectivity measurements */
+    if (reflect_opt == SICK_LMS_1XX_REFLECT_8) {
+      scan_format_str += "+ 8-bit reflect)";
+    }
+    else if (reflect_opt == SICK_LMS_1XX_REFLECT_16) {
+      scan_format_str += "+ 16-bit reflect)";
+    }
+    else {
+      scan_format_str += ")";
+    }
+
+    /* Done! */
+    return scan_format_str;
+  }
+
   
 } //namespace SickToolbox

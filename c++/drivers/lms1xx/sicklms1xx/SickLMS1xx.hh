@@ -22,8 +22,7 @@
 #define DEFAULT_SICK_LMS_1XX_TCP_PORT                            (2111)                 ///< Sick LMS 1xx TCP/IP Port
 #define DEFAULT_SICK_LMS_1XX_CONNECT_TIMEOUT                  (1000000)                 ///< Max time for establishing connection (usecs)
 #define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (1000000)                 ///< Max time for reply (usecs)
-
-#define SICK_LMS_1XX_MAX_BUFFER_LENGTH                           (2604)                 ///< Maximum number of bytes
+#define DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT                  (60000000)                 ///< Max time it should take to change status  
 
 #define SICK_LMS_1XX_SCAN_AREA_MIN_ANGLE                      (-450000)                 ///< -45 degrees (1/10000) degree
 #define SICK_LMS_1XX_SCAN_AREA_MAX_ANGLE                      (2250000)                 ///< 225 degrees (1/10000) degree
@@ -52,6 +51,8 @@ namespace SickToolbox {
 
   public:
 
+    static const int SICK_MAX_NUM_MEASUREMENTS = 1081;                                  ///< LMS 1xx max number of measurements
+    
     /*!
      * \enum sick_lms_1xx_status_t 
      * \brief Defines the Sick LMS 1xx status.
@@ -93,7 +94,7 @@ namespace SickToolbox {
       SICK_LMS_1XX_SCAN_RES_50 = 0x1388                                                 ///< LMS 1xx scan res 0.25 deg
 
     };
-    
+
     /*!
      * \struct sick_lms_1xx_scan_config_tag
      * \brief A structure for aggregrating the
@@ -124,6 +125,15 @@ namespace SickToolbox {
     /** Sets the Sick LMS1xx scan frequency and scan resolution */
     void SetSickScanArea( const int scan_start_angle,
 			  const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException ); 
+
+    /** Get the Sick Single-pulse Range Measurements */
+    void GetSickRangeMeasurements( unsigned int * const range_vals,
+				   unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException );
+    
+    /** Get the Sick Multi-pulse Range Measurements */
+    void GetSickRangeMeasurements( unsigned int * const range_1_vals,
+				   unsigned int * const range_2_vals,
+				   unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException );
     
     /** Uninitializes the Sick LD unit */
     void Uninitialize( ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException );
@@ -133,6 +143,31 @@ namespace SickToolbox {
 
   private:
 
+    /*!
+     * \enum sick_lms_1xx_dist_opt_t 
+     * \brief Defines the Sick LMS 1xx distance options
+     * This enum is for specifiying the desired range returns.
+     */
+    enum sick_lms_1xx_dist_opt_t {
+      
+      SICK_LMS_1XX_DIST_SINGLE_PULSE = 0x00,                                         ///< Single pulse distance returns
+      SICK_LMS_1XX_DIST_MULTI_PULSE = 0x01                                           ///< Multi-pulse distance returns
+      
+    };
+    
+    /*!
+     * \enum sick_lms_1xx_reflect_opt_t 
+     * \brief Defines the Sick LMS 1xx reflectivity options.
+     * This enum is for specifying the desired reflectivity returns.
+     */
+    enum sick_lms_1xx_reflect_opt_t {
+      
+      SICK_LMS_1XX_REFLECT_NO = 0x00,                                                ///< No reflectivity returns
+      SICK_LMS_1XX_REFLECT_8 = 0x01,                                                 ///< 8bit reflectivity
+      SICK_LMS_1XX_REFLECT_16 = 0x02                                                 ///< 16bit reflectivity
+      
+    };
+    
     /** The Sick LMS 1xx IP address */
     std::string _sick_ip_address;
 
@@ -144,6 +179,15 @@ namespace SickToolbox {
 
     /** Sick LMS 1xx configuration struct */
     sick_lms_1xx_scan_config_t _sick_scan_config;
+
+    /** Sick LMS 1xx configuration struct */
+    sick_lms_1xx_status_t _sick_device_status;
+
+    /** Sick LMS 1xx temperature status */
+    bool _sick_temp_safe;
+
+    /** Sick LMS 1xx streaming status */
+    bool _sick_streaming;
     
     /** Setup the connection parameters and establish TCP connection! */
     void _setupConnection( ) throw( SickIOException, SickTimeoutException );  
@@ -151,8 +195,8 @@ namespace SickToolbox {
     /** Teardown the connection to the Sick LD */
     void _teardownConnection( ) throw( SickIOException );
 
-    /** Acquire the Sick LMS's status */
-    void _getSickStatus( sick_lms_1xx_status_t &sick_status, bool &temp_status ) throw( SickTimeoutException, SickIOException );
+    /** Acquire the latest Sick LMS's status */
+    void _updateSickStatus( ) throw( SickTimeoutException, SickIOException );
 
     /** Acquire the Sick LMS's scan config */
     void _getSickScanConfig( ) throw( SickTimeoutException, SickIOException );
@@ -163,10 +207,13 @@ namespace SickToolbox {
 			     const int start_angle, const int stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException );
     
     /** Set access mode for configuring device */
-    bool _setAuthorizedClientAccessMode() throw( SickTimeoutException, SickIOException );
+    bool _setAuthorizedClientAccessMode( ) throw( SickTimeoutException, SickIOException );
 
     /** Save configuration parameters to EEPROM */
     void _writeToEEPROM( ) throw( SickTimeoutException, SickIOException );
+
+    /** Send the message w/o waiting for a reply */
+    void _sendMessage( const SickLMS1xxMessage &send_message ) const throw ( SickIOException );
     
     /** Send the message and grab expected reply */
     void _sendMessageAndGetReply( const SickLMS1xxMessage &send_message,
@@ -176,6 +223,35 @@ namespace SickToolbox {
 				  const unsigned int timeout_value = DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT,
 				  const unsigned int num_tries = 1 ) throw( SickIOException, SickTimeoutException );
 
+    /** Receive a message */
+    void _recvMessage( SickLMS1xxMessage &sick_message ) const throw ( SickTimeoutException );
+    
+    /** Start device measuring */
+    void _startMeasuring( ) throw ( SickTimeoutException, SickIOException );
+
+    /** Stop device measuring */
+    void _stopMeasuring( ) throw ( SickTimeoutException, SickIOException );
+
+    /** Request a data data stream type */
+    void _requestDataStreamByType( const sick_lms_1xx_dist_opt_t dist_opt,
+				   const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException );
+    
+    /** Start streaming measurements */
+    void _startStreamingMeasurements(  )throw( SickTimeoutException, SickIOException );
+
+    /** Stop streaming measurements */
+    void _stopStreamingMeasurements( ) throw( SickTimeoutException, SickIOException );
+
+    /** Set device to measuring mode */
+    void _checkForMeasuringStatus( unsigned int timeout_value = DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT ) throw( SickTimeoutException, SickIOException );
+
+    /** Restore device to measuring mode */
+    void _restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException );
+    
+    /** Set device to output only range values */
+    void _setSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
+				 const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException );
+    
     /** Ensures a feasible scan area */
     bool _validScanArea( const int start_angle, const int stop_angle ) const;
     
@@ -185,12 +261,21 @@ namespace SickToolbox {
     /** Utility function to convert config error int to str */
     std::string _intToSickConfigErrorStr( const int error ) const;
 
+    /** Utility function to locate substring in string */
+    bool _findSubString( const char * const str, const char * const substr,
+			 const unsigned int str_length, const unsigned int substr_length,
+			 unsigned int &substr_pos, unsigned int start_pos = 0 ) const;
+    
     /** Utility function for printing Sick scan config */
     void _printSickScanConfig( ) const;
     
     /** Utility function for printing footer after initialization */
     void _printInitFooter( ) const;
 
+    /** Utility function for returning scan format as string */
+    std::string _sickScanDataFormatToString( const sick_lms_1xx_dist_opt_t dist_opt,
+					     const sick_lms_1xx_reflect_opt_t reflect_opt ) const;
+    
   };
 
   /*!
