@@ -39,15 +39,26 @@ int main(int argc, char* argv[])
     cerr << "Initialize failed! Are you using the correct IP address?" << endl;
     return -1;
   }
-
-
+  
   try {
-    sick_lms_1xx.SetSickScanFreqAndRes(SickLMS1xx::SICK_LMS_1XX_SCAN_FREQ_25,
-				       SickLMS1xx::SICK_LMS_1XX_SCAN_RES_25);
-    sick_lms_1xx.SetSickScanArea(-450000,2250000);
+    unsigned int num_measurements = 0;
+    unsigned int range_1_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS];
+    unsigned int range_2_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS];
+    for (int i = 0; i < 100; i++) {
+      sick_lms_1xx.GetSickRangeMeasurements(range_1_vals,range_2_vals,num_measurements);
+      std::cout << i << ": " << num_measurements << std::endl;
+    }
+  }
+  
+  catch(SickConfigException sick_exception) {
+    std::cout << sick_exception.what() << std::endl;
   }
 
-  catch(SickConfigException sick_exception) {
+  catch(SickIOException sick_exception) {
+    std::cout << sick_exception.what() << std::endl;
+  }
+
+  catch(SickTimeoutException sick_exception) {
     std::cout << sick_exception.what() << std::endl;
   }
   
