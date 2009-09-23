@@ -74,6 +74,8 @@ AC_CONFIG_FILES([Makefile
                  c++/examples/lms1xx/Makefile
                  c++/examples/lms1xx/lms1xx_simple_app/Makefile
                  c++/examples/lms1xx/lms1xx_simple_app/src/Makefile
+		 c++/examples/lms1xx/lms1xx_plot_values/Makefile
+                 c++/examples/lms1xx/lms1xx_plot_values/src/Makefile
                  c++/examples/lms2xx/Makefile
                  c++/examples/lms2xx/lms2xx_config/Makefile
                  c++/examples/lms2xx/lms2xx_config/src/Makefile

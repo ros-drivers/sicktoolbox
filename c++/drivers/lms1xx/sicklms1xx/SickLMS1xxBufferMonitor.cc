@@ -45,6 +45,9 @@ namespace SickToolbox {
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
     
     try {
+
+      /* Flush the TCP receive buffer */
+      _flushTCPRecvBuffer();
       
       /* Search for STX in the byte stream */
       do {
@@ -87,6 +90,31 @@ namespace SickToolbox {
     /* A sanity check */
     catch (...) {
       throw;
+    }
+    
+  }
+
+  /**
+   * \brief Flushes TCP receive buffer contents
+   */
+  void SickLMS1xxBufferMonitor::_flushTCPRecvBuffer( ) const throw (SickIOException) {
+    
+    char null_byte;
+    int num_bytes_waiting = 0;    
+
+    /* Acquire number of awaiting bytes */
+    if (ioctl(_sick_fd,FIONREAD,&num_bytes_waiting)) {
+      throw SickIOException("SickLMS1xxBufferMonitor::_flushTCPRecvBuffer: ioctl() failed!");
+    }
+    
+    /* Flush awaiting bytes */
+    for (int i = 0; i < num_bytes_waiting; i++) {
+      
+      /* Capture a single byte from the stream! */
+      if (read(_sick_fd,&null_byte,1) != 1) {
+	throw SickIOException("SickLMS1xxBufferMonitor::_flushTCPRecvBuffer: ioctl() failed!");
+      }	  
+      
     }
     
   }
