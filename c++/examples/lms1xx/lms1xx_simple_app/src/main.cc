@@ -45,7 +45,8 @@ int main(int argc, char* argv[])
     unsigned int range_1_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS];
     unsigned int range_2_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS];
     for (int i = 0; i < 100; i++) {
-      sick_lms_1xx.GetSickRangeMeasurements(range_1_vals,range_2_vals,num_measurements);
+      //sick_lms_1xx.GetSickRange(range_1_vals,range_2_vals,num_measurements);
+      sick_lms_1xx.GetSickRange(range_1_vals,num_measurements);
       std::cout << i << ": " << num_measurements << std::endl;
     }
   }

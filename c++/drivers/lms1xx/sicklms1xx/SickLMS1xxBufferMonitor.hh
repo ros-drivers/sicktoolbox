@@ -44,6 +44,11 @@ namespace SickToolbox {
     /** A standard destructor */
     ~SickLMS1xxBufferMonitor( );
 
+  private:
+
+    /* A utility function for flushing the receive buffer */
+    void _flushTCPRecvBuffer( ) const throw ( SickIOException );
+    
   };
     
 } /* namespace SickToolbox */
