@@ -21,7 +21,7 @@
 #define DEFAULT_SICK_LMS_1XX_IP_ADDRESS                   "192.168.0.1"                 ///< Default IP Address
 #define DEFAULT_SICK_LMS_1XX_TCP_PORT                            (2111)                 ///< Sick LMS 1xx TCP/IP Port
 #define DEFAULT_SICK_LMS_1XX_CONNECT_TIMEOUT                  (1000000)                 ///< Max time for establishing connection (usecs)
-#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (2000000)                 ///< Max time for reply (usecs)
+#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (1000000)                 ///< Max time for reply (usecs)
 #define DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT                 (300000000)                 ///< Max time it should take to change status  
 
 #define SICK_LMS_1XX_SCAN_AREA_MIN_ANGLE                      (-450000)                 ///< -45 degrees (1/10000) degree
@@ -51,7 +51,7 @@ namespace SickToolbox {
 
   public:
 
-    static const int SICK_MAX_NUM_MEASUREMENTS = 1081;                                  ///< LMS 1xx max number of measurements
+    static const int SICK_MAX_NUM_MEASUREMENTS = 1082;                                  ///< LMS 1xx max number of measurements
     
      /*!
       * \enum sick_lms_1xx_status_t 
@@ -70,6 +70,18 @@ namespace SickToolbox {
        SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT = 0x07                                  ///< LMS 1xx is ready to give measurements 
        
      };
+
+    /*!
+     * \enum sick_lms_1xx_dist_opt_t
+     * \brief Defines the Sick LMS 1xx distance options
+     * This enum is for specifiying the desired range returns.
+     */
+    enum sick_lms_1xx_dist_opt_t {
+      
+      SICK_LMS_1XX_DIST_SINGLE_PULSE = 0x00,                                            ///< Single pulse distance returns
+      SICK_LMS_1XX_DIST_DOUBLE_PULSE = 0x01                                             ///< Multi-pulse distance returns
+      
+    };
     
     /*!
      * \enum sick_lms_1xx_reflect_opt_t
@@ -133,34 +145,25 @@ namespace SickToolbox {
 
     /** Sets the Sick LMS1xx scan frequency and scan resolution */
     void SetSickScanFreqAndRes( const sick_lms_1xx_scan_freq_t scan_freq,
-				const sick_lms_1xx_scan_res_t scan_res ) throw( SickTimeoutException, SickIOException, SickConfigException ); 
+				const sick_lms_1xx_scan_res_t scan_res ) throw( SickTimeoutException, SickIOException, SickErrorException ); 
 
     /** Sets the Sick LMS1xx scan frequency and scan resolution */
     void SetSickScanArea( const int scan_start_angle,
-			  const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException ); 
+			  const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickErrorException ); 
 
-    /** Get the Sick Single-pulse Range Measurements */
-    void GetSickRange( unsigned int * const range_vals,
-		       unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException );
+    /** Sets the sick scan data format */
+    void SetSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
+				const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException );
     
-    /** Get the Sick Double-pulse Range Measurements */
-    void GetSickRange( unsigned int * const range_1_vals,
-		       unsigned int * const range_2_vals,
-		       unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException );
+    /** Get the Sick Range Measurements */
+    void GetSickMeasurements( unsigned int * const range_1_vals,
+			      unsigned int * const range_2_vals,
+			      unsigned int * const reflect_1_vals,
+			      unsigned int * const reflect_2_vals,
+			      unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException );
 
-    /** Get the Sick Single-pulse Range Measurements */
-    void GetSickRangeAndReflect( unsigned int * const range_vals,
-				 unsigned int * const reflect_vals,
-				 unsigned int & num_measurements,
-				 const sick_lms_1xx_reflect_opt_t reflect_opt = SICK_LMS_1XX_REFLECT_8BIT ) throw ( SickIOException, SickConfigException, SickTimeoutException );
-
-    /** Get the Sick Single-pulse Range Measurements */
-    void GetSickRangeAndReflect( unsigned int * const range_1_vals,
-				 unsigned int * const range_2_vals,
-				 unsigned int * const reflect_1_vals,
-				 unsigned int * const reflect_2_vals,
-				 unsigned int & num_measurements,
-				 const sick_lms_1xx_reflect_opt_t reflect_opt = SICK_LMS_1XX_REFLECT_8BIT ) throw ( SickIOException, SickConfigException, SickTimeoutException );
+    /** Write the device configuration to EEPROM */
+    void WriteSickParamsToEEPROM( ) throw( SickTimeoutException, SickIOException );
     
     /** Uninitializes the Sick LD unit */
     void Uninitialize( ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException );
@@ -186,18 +189,6 @@ namespace SickToolbox {
       
 //     };
 
-    /*!
-     * \enum sick_lms_1xx_dist_opt_t
-     * \brief Defines the Sick LMS 1xx distance options
-     * This enum is for specifiying the desired range returns.
-     */
-    enum sick_lms_1xx_dist_opt_t {
-      
-      SICK_LMS_1XX_DIST_SINGLE_PULSE = 0x00,                                            ///< Single pulse distance returns
-      SICK_LMS_1XX_DIST_DOUBLE_PULSE = 0x01                                             ///< Multi-pulse distance returns
-      
-    };
-        
     /** The Sick LMS 1xx IP address */
     std::string _sick_ip_address;
 
@@ -234,10 +225,10 @@ namespace SickToolbox {
     /** Sets the scan configuration (volatile, does not write to EEPROM) */
     void _setSickScanConfig( const sick_lms_1xx_scan_freq_t scan_freq,
 			     const sick_lms_1xx_scan_res_t scan_res,
-			     const int start_angle, const int stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException );
+			     const int start_angle, const int stop_angle ) throw( SickTimeoutException, SickIOException, SickErrorException );
     
     /** Set access mode for configuring device */
-    bool _setAuthorizedClientAccessMode( ) throw( SickTimeoutException, SickIOException );
+    void _setAuthorizedClientAccessMode( ) throw( SickTimeoutException, SickErrorException, SickIOException );
 
     /** Save configuration parameters to EEPROM */
     void _writeToEEPROM( ) throw( SickTimeoutException, SickIOException );
@@ -263,8 +254,7 @@ namespace SickToolbox {
     void _stopMeasuring( ) throw ( SickTimeoutException, SickIOException );
 
     /** Request a data data stream type */
-    void _requestDataStreamByType( const sick_lms_1xx_dist_opt_t dist_opt,
-				   const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickConfigException, SickIOException );
+    void _requestDataStream( ) throw ( SickTimeoutException, SickConfigException, SickIOException );
 
     /** Verify the requested data stream */
     //bool _verifyDataStreamByType( const sick_lms_1xx_scan_type_t scan_type ) throw( SickTimeoutException, SickConfigException );
@@ -278,13 +268,13 @@ namespace SickToolbox {
     /** Set device to measuring mode */
     void _checkForMeasuringStatus( unsigned int timeout_value = DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT ) throw( SickTimeoutException, SickIOException );
 
-    /** Restore device to measuring mode */
-    void _restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException );
-
-    /** Set device to output only range values */
+    /** Sets the sick scan data format */
     void _setSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
 				 const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException );
     
+    /** Restore device to measuring mode */
+    void _restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException );
+
     /** Ensures a feasible scan area */
     bool _validScanArea( const int start_angle, const int stop_angle ) const;
     
