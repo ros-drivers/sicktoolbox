@@ -230,7 +230,7 @@ namespace SickToolbox {
      * \brief Another constructor
      * \param detailed_str A more detailed description
      */
-    SickErrorException( const char* detailed_str ) :
+    SickErrorException( const std::string detailed_str ) :
       SickException("ERROR: Sick error -", detailed_str) { } 
 
     /**

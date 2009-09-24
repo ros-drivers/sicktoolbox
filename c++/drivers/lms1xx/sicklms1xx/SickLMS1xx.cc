@@ -85,12 +85,18 @@ namespace SickToolbox {
       /* Ok, lets sync the driver with the Sick */
       std::cout << "\tSyncing driver with Sick..." << std::endl;
       _getSickScanConfig();
+      _setAuthorizedClientAccessMode();
       std::cout << "\t\tSuccess!" << std::endl;
       
     }
     
     catch(SickIOException &sick_io_exception) {
       std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+
+    catch(SickErrorException &sick_error_exception) {
+      std::cerr << sick_error_exception.what() << std::endl;
       throw;
     }
     
@@ -124,26 +130,32 @@ namespace SickToolbox {
    * \param write_to_eeprom Write the configuration to EEPROM
    */
   void SickLMS1xx::SetSickScanFreqAndRes( const sick_lms_1xx_scan_freq_t scan_freq,
-					  const sick_lms_1xx_scan_res_t scan_res ) throw( SickTimeoutException, SickIOException, SickConfigException ) {
+					  const sick_lms_1xx_scan_res_t scan_res ) throw( SickTimeoutException, SickIOException, SickErrorException ) {
 
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
       throw SickIOException("SickLMS1xx::SetSickScanFreqAndRes: Device NOT Initialized!!!");
     }
-    
+
     try {
+
+      /* Is the device streaming? */
+      if (_sick_streaming) {
+	_stopStreamingMeasurements();
+	_stopMeasuring();
+      }
 
       /* Set the desired configuration */
       _setSickScanConfig(scan_freq,
 			 scan_res,
 			 _sick_scan_config.sick_start_angle,
 			 _sick_scan_config.sick_stop_angle);
-      
+
     }
 
     /* Handle config exceptions */
-    catch (SickConfigException &sick_config_exception) {
-      std::cerr << sick_config_exception.what() << std::endl;
+    catch (SickErrorException &sick_error_exception) {
+      std::cerr << sick_error_exception.what() << std::endl;
       throw;
     }
     
@@ -173,26 +185,37 @@ namespace SickToolbox {
    * \param scan_res Desired scan angular resolution (e.g. SickLMS1xx::SICK_LMS_1XX_SCAN_RES_50)
    */
   void SickLMS1xx::SetSickScanArea( const int scan_start_angle,
-				    const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException ) {
+				    const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickErrorException ) {
 
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
       throw SickIOException("SickLMS1xx::SetSickScanArea: Device NOT Initialized!!!");
     }
-    
+
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::SetSickScanFreqAndRes: Device NOT Initialized!!!");
+    }
+
     try {
+
+      /* Is the device streaming? */
+      if (_sick_streaming) {
+	_stopStreamingMeasurements();
+	_stopMeasuring();
+      }
 
       /* Set the desired configuration */
       _setSickScanConfig(_sick_scan_config.sick_scan_freq,
 			 _sick_scan_config.sick_scan_res,
 			 scan_start_angle,
 			 scan_stop_angle);
-    
+
     }
 
     /* Handle config exceptions */
-    catch (SickConfigException &sick_config_exception) {
-      std::cerr << sick_config_exception.what() << std::endl;
+    catch (SickErrorException &sick_error_exception) {
+      std::cerr << sick_error_exception.what() << std::endl;
       throw;
     }
     
@@ -217,29 +240,31 @@ namespace SickToolbox {
   }
 
   /**
-   * \brief Acquire single pulse Sick range measurements
+   * Set device to output only range values
    */
-  void SickLMS1xx::GetSickRange( unsigned int * const range_vals,
-				 unsigned int &num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
-    
+  void SickLMS1xx::SetSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
+					  const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException ) {
+
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::GetSickRangeMeasurements: Device NOT Initialized!!!");
+      throw SickIOException("SickLMS1xx::SetSickScanDataFormat: Device NOT Initialized!!!");
     }
-    
-    try {
 
-      /* Is the device already streaming? */
-      if (!_sick_streaming) {
-	_requestDataStreamByType(SICK_LMS_1XX_DIST_SINGLE_PULSE, SICK_LMS_1XX_REFLECT_NONE);
+    try {
+      
+      /* Is the device streaming? */
+      if (_sick_streaming) {
+	_stopStreamingMeasurements();
+	_stopMeasuring();
       }
 
-    }
+      std::cout << "\t*** Attempting to set data format..." << std::endl;
+      
+      /* Set the desired data format! */
+      _setSickScanDataFormat(dist_opt,reflect_opt);
 
-    /* Handle config exceptions */
-    catch (SickConfigException &sick_config_exception) {
-      std::cerr << sick_config_exception.what() << std::endl;
-      throw;
+      std::cout << "\t\tSuccess!" << std::endl;
+      
     }
     
     /* Handle a timeout! */
@@ -255,360 +280,37 @@ namespace SickToolbox {
     }
     
     catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      std::cerr << "SickLMS1xx::SetSickScanDataFormat: Unknown exception!!!" << std::endl;
       throw;
     }
 
-
-    /* Allocate receive message */
-    SickLMS1xxMessage recv_message;
-    
-    try {
-
-      /* Grab the next message from the stream */
-      _recvMessage(recv_message);
-
-    }
-
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
-
-    recv_message.GetPayloadAsCStr((char *)payload_buffer);
-
-    /*
-     * Process DIST1
-     */
-    
-    /* Locate DIST1 Section */
-    const char * substr_dist_1 = "DIST1";
-    unsigned int substr_dist_1_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_dist_1,recv_message.GetPayloadLength()+1,5,substr_dist_1_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-
-    /* Extract Num DIST1 Values */
-    unsigned int null_int;
-    char * payload_str = (char *)&payload_buffer[substr_dist_1_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_dist_1_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_dist_1_vals);
-
-    /* Grab the DIST1 values */
-    for (unsigned int i = 0; i < num_dist_1_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,range_vals[i]);
-    }
-
-    num_measurements = num_dist_1_vals;
-    
-    /* Success !*/
+    /* Success! */
     
   }
   
   /**
    * \brief Acquire multi-pulse sick range measurements
+   * \param range_1_vals A buffer to hold the range measurements
+   * \param range_2_vals A buffer to hold the second pulse range measurements
+   * \param refelct_1_vals A buffer to hold the frist pulse reflectivity
+   * \param reflect_2_vals A buffer to hold the second pulse reflectivity
    */
-  void SickLMS1xx::GetSickRange( unsigned int * const range_1_vals,
-				 unsigned int * const range_2_vals,
-				 unsigned int &num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
+  void SickLMS1xx::GetSickMeasurements( unsigned int * const range_1_vals,
+					unsigned int * const range_2_vals,
+					unsigned int * const reflect_1_vals,
+					unsigned int * const reflect_2_vals,
+					unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
     
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Device NOT Initialized!!!");
+      throw SickIOException("SickLMS1xx::GetSickMeasurements: Device NOT Initialized!!!");
     }
     
     try {
 
       /* Is the device already streaming? */
       if (!_sick_streaming) {
-	_requestDataStreamByType(SICK_LMS_1XX_DIST_DOUBLE_PULSE, SICK_LMS_1XX_REFLECT_NONE);
-      }
-
-    }
-
-    /* Handle config exceptions */
-    catch (SickConfigException &sick_config_exception) {
-      std::cerr << sick_config_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* Handle write buffer exceptions */
-    catch (SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
-      throw;
-    }
-    
-    catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    /* Allocate receive message */
-    SickLMS1xxMessage recv_message;
-    
-    try {
-
-      /* Grab the next message from the stream */
-      _recvMessage(recv_message);
-
-    }
-
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
-
-    recv_message.GetPayloadAsCStr((char *)payload_buffer);
-
-    /*
-     * Process DIST1
-     */
-    
-    /* Locate DIST1 Section */
-    const char * substr_dist_1 = "DIST1";
-    unsigned int substr_dist_1_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_dist_1,recv_message.GetPayloadLength()+1,5,substr_dist_1_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-
-    /* Extract Num DIST1 Values */
-    unsigned int null_int;
-    char * payload_str = (char *)&payload_buffer[substr_dist_1_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_dist_1_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_dist_1_vals);
-
-    /* Grab the DIST1 values */
-    for (unsigned int i = 0; i < num_dist_1_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,range_1_vals[i]);
-    }
-
-    /*
-     * Process DIST2
-     */
-    
-    /* Locate DIST2 Section */
-    const char * substr_dist_2 = "DIST2";
-    unsigned int substr_dist_2_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_dist_2,recv_message.GetPayloadLength()+1,5,substr_dist_2_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-
-    /* Extract Num DIST2 Values */
-    payload_str = (char *)&payload_buffer[substr_dist_2_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_dist_2_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_dist_2_vals);
-
-    /* Acquire the DIST2 values */
-    for (unsigned int i = 0; i < num_dist_2_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,range_2_vals[i]);
-    }
-
-    /* A sanity check... */
-    if (num_dist_1_vals != num_dist_2_vals) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Inconsistent number of measurements!");
-    }
-    
-    /* Assign number of measurements */
-    num_measurements = num_dist_1_vals;
-    
-  }
-
-  /**
-   * \brief Acquire multi-pulse sick range measurements
-   */
-  void SickLMS1xx::GetSickRangeAndReflect( unsigned int * const range_vals,
-					   unsigned int * const reflect_vals,
-					   unsigned int &num_measurements,
-					   const sick_lms_1xx_reflect_opt_t reflect_opt ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
-    
-    /* Ensure the device has been initialized */
-    if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Device NOT Initialized!!!");
-    }
-
-    /* A sanity check */
-    if (reflect_opt != SICK_LMS_1XX_REFLECT_8BIT && reflect_opt != SICK_LMS_1XX_REFLECT_16BIT) {
-      throw SickConfigException("SickLMS1xx::GetSickRangeAndReflect: Invalid reflectivity option!");
-    }
-    
-    try {
-
-      /* Is the device already streaming? */
-      if (!_sick_streaming) {
-	_requestDataStreamByType(SICK_LMS_1XX_DIST_SINGLE_PULSE, reflect_opt);
-      }
-
-    }
-
-    /* Handle config exceptions */
-    catch (SickConfigException &sick_config_exception) {
-      std::cerr << sick_config_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* Handle write buffer exceptions */
-    catch (SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
-      throw;
-    }
-    
-    catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    /* Allocate receive message */
-    SickLMS1xxMessage recv_message;
-    
-    try {
-
-      /* Grab the next message from the stream */
-      _recvMessage(recv_message);
-
-    }
-
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
-
-    recv_message.GetPayloadAsCStr((char *)payload_buffer);
-
-    /*
-     * Process DIST1
-     */
-    const char * substr_dist_1 = "DIST1";
-    unsigned int substr_dist_1_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_dist_1,recv_message.GetPayloadLength()+1,5,substr_dist_1_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-
-    /* Extract Num DIST1 Values */
-    unsigned int null_int;
-    char * payload_str = (char *)&payload_buffer[substr_dist_1_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_dist_1_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_dist_1_vals);
-
-    /* Grab the DIST1 values */
-    for (unsigned int i = 0; i < num_dist_1_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,range_vals[i]);
-    }
-
-    /*
-     * Process RSSI1
-     */
-    
-    /* Locate RSSI1 Section */
-    const char * substr_rssi_1 = "RSSI1";
-    unsigned int substr_rssi_1_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_rssi_1,recv_message.GetPayloadLength()+1,5,substr_rssi_1_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-    
-    /* Extract Num RSSI1 Values */
-    payload_str = (char *)&payload_buffer[substr_rssi_1_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_rssi_1_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_rssi_1_vals);
-
-    /* Grab the RSSI1 values */
-    for (unsigned int i = 0; i < num_rssi_1_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,reflect_vals[i]);
-    }
-
-    /* A sanity check */
-    if (num_dist_1_vals != num_rssi_1_vals) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Inconsistent number of measurements!");
-    }
-    
-    /* Assign number of measurements */
-    num_measurements = num_dist_1_vals;
-    
-  }
-
-  /**
-   * \brief Acquire multi-pulse sick range measurements
-   */
-  void SickLMS1xx::GetSickRangeAndReflect( unsigned int * const range_1_vals,
-					   unsigned int * const range_2_vals,
-					   unsigned int * const reflect_1_vals,
-					   unsigned int * const reflect_2_vals,
-					   unsigned int & num_measurements,
-					   const sick_lms_1xx_reflect_opt_t reflect_opt ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
-    
-    /* Ensure the device has been initialized */
-    if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Device NOT Initialized!!!");
-    }
-
-    /* A sanity check */
-    if (reflect_opt != SICK_LMS_1XX_REFLECT_8BIT && reflect_opt != SICK_LMS_1XX_REFLECT_16BIT) {
-      throw SickConfigException("SickLMS1xx::GetSickRangeAndReflect: Invalid reflectivity option!");
-    }
-    
-    try {
-
-      /* Is the device already streaming? */
-      if (!_sick_streaming) {
-	_requestDataStreamByType(SICK_LMS_1XX_DIST_DOUBLE_PULSE, SICK_LMS_1XX_REFLECT_NONE);
+	_requestDataStream();
       }
 
     }
@@ -665,121 +367,182 @@ namespace SickToolbox {
     /*
      * Process DIST1
      */
-    
-    /* Locate DIST1 Section */
-    const char * substr_dist_1 = "DIST1";
-    unsigned int substr_dist_1_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_dist_1,recv_message.GetPayloadLength()+1,5,substr_dist_1_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-
-    /* Extract Num DIST1 Values */
-    unsigned int null_int;
-    char * payload_str = (char *)&payload_buffer[substr_dist_1_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
+    char * payload_str = NULL;
+    unsigned int null_int = 0;
 
     unsigned int num_dist_1_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_dist_1_vals);
+    unsigned int num_dist_2_vals = 0;
+    unsigned int num_rssi_1_vals = 0;
+    unsigned int num_rssi_2_vals = 0;
+    
+    /* Locate DIST1 Section */
+    if (range_1_vals != NULL) {
 
-    /* Grab the DIST1 values */
-    for (unsigned int i = 0; i < num_dist_1_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,range_1_vals[i]);
+      const char * substr_dist_1 = "DIST1";
+      unsigned int substr_dist_1_pos = 0;
+      if (!_findSubString((char *)payload_buffer,substr_dist_1,recv_message.GetPayloadLength()+1,5,substr_dist_1_pos)) {
+	throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
+      }
+      
+      /* Extract Num DIST1 Values */
+      payload_str = (char *)&payload_buffer[substr_dist_1_pos+6];
+      for (unsigned int i = 0; i < 4; i++) {
+	payload_str = _convertNextTokenToUInt(payload_str,null_int);
+      }
+      
+      payload_str = _convertNextTokenToUInt(payload_str,num_dist_1_vals);
+      
+      /* Grab the DIST1 values */
+      for (unsigned int i = 0; i < num_dist_1_vals; i++) {
+	payload_str = _convertNextTokenToUInt(payload_str,range_1_vals[i]);
+      }
+
     }
-
+      
     /*
      * Process DIST2
      */
     
     /* Locate DIST2 Section */
-    const char * substr_dist_2 = "DIST2";
-    unsigned int substr_dist_2_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_dist_2,recv_message.GetPayloadLength()+1,5,substr_dist_2_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
+    if (range_2_vals != NULL) {
+      
+      const char * substr_dist_2 = "DIST2";
+      unsigned int substr_dist_2_pos = 0;
+      if (_findSubString((char *)payload_buffer,substr_dist_2,recv_message.GetPayloadLength()+1,5,substr_dist_2_pos)) {
+
+	/* Extract Num DIST2 Values */
+	payload_str = (char *)&payload_buffer[substr_dist_2_pos+6];
+	for (unsigned int i = 0; i < 4; i++) {
+	  payload_str = _convertNextTokenToUInt(payload_str,null_int);
+	}
+	
+	payload_str = _convertNextTokenToUInt(payload_str,num_dist_2_vals);
+	
+	/* Acquire the DIST2 values */
+	for (unsigned int i = 0; i < num_dist_2_vals; i++) {
+	  payload_str = _convertNextTokenToUInt(payload_str,range_2_vals[i]);
+	}
+      }
+      else {
+	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! You requested values that are not being streamed!" << std::endl;
+	std::cerr << "Either use SetSickScanDataFormat to enable desired stream - or - try reinitializing." << std::endl;
+      }
+	
     }
-
-    /* Extract Num DIST2 Values */
-    payload_str = (char *)&payload_buffer[substr_dist_2_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_dist_2_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_dist_2_vals);
-
-    /* Acquire the DIST2 values */
-    for (unsigned int i = 0; i < num_dist_2_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,range_2_vals[i]);
-    }
-
+      
     /*
      * Process RSSI1
      */
+
+    if (reflect_1_vals != NULL) {
     
-    /* Locate RSSI1 Section */
-    const char * substr_rssi_1 = "RSSI1";
-    unsigned int substr_rssi_1_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_rssi_1,recv_message.GetPayloadLength()+1,5,substr_rssi_1_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-    
-    /* Extract Num RSSI1 Values */
-    payload_str = (char *)&payload_buffer[substr_rssi_1_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
-
-    unsigned int num_rssi_1_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_rssi_1_vals);
-
-    /* Grab the RSSI1 values */
-    for (unsigned int i = 0; i < num_rssi_1_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,reflect_1_vals[i]);
-    }
-
-    /* A sanity check */
-    if (num_dist_1_vals != num_rssi_1_vals) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Inconsistent number of measurements!");
+      /* Locate RSSI1 Section */
+      const char * substr_rssi_1 = "RSSI1";
+      unsigned int substr_rssi_1_pos = 0;
+      if (_findSubString((char *)payload_buffer,substr_rssi_1,recv_message.GetPayloadLength()+1,5,substr_rssi_1_pos)) {
+      
+	/* Extract Num RSSI1 Values */
+	payload_str = (char *)&payload_buffer[substr_rssi_1_pos+6];
+	for (unsigned int i = 0; i < 4; i++) {
+	  payload_str = _convertNextTokenToUInt(payload_str,null_int);
+	}
+	
+	payload_str = _convertNextTokenToUInt(payload_str,num_rssi_1_vals);
+	
+	/* Grab the RSSI1 values */
+	for (unsigned int i = 0; i < num_rssi_1_vals; i++) {
+	  payload_str = _convertNextTokenToUInt(payload_str,reflect_1_vals[i]);
+	}
+      }
+      else {
+	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! You requested values that are not being streamed!" << std::endl;
+	std::cerr << "Either use SetSickScanDataFormat to enable desired stream - or - try reinitializing." << std::endl;	
+      }
+	  
     }
     
     /*
      * Process RSSI2
      */
-    
-    /* Locate RSSI2 Section */
-    const char * substr_rssi_2 = "RSSI2";
-    unsigned int substr_rssi_2_pos = 0;
-    if (!_findSubString((char *)payload_buffer,substr_rssi_2,recv_message.GetPayloadLength()+1,5,substr_rssi_2_pos)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
-    }
-    
-    /* Extract Num RSSI1 Values */
-    payload_str = (char *)&payload_buffer[substr_rssi_2_pos+6];
-    for (unsigned int i = 0; i < 4; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,null_int);
-    }
 
-    unsigned int num_rssi_2_vals = 0;
-    payload_str = _convertNextTokenToUInt(payload_str,num_rssi_2_vals);
-
-    /* Grab the RSSI1 values */
-    for (unsigned int i = 0; i < num_rssi_2_vals; i++) {
-      payload_str = _convertNextTokenToUInt(payload_str,reflect_2_vals[i]);
-    }
-
-    /* A sanity check */
-    if ((num_dist_1_vals != num_dist_2_vals) ||
-	(num_rssi_1_vals != num_rssi_2_vals) ||
-	(num_dist_1_vals != num_rssi_1_vals)) {
-      throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: Inconsistent number of measurements!");
-    }
+    if (reflect_2_vals != NULL) {
     
+      /* Locate RSSI2 Section */
+      const char * substr_rssi_2 = "RSSI2";
+      unsigned int substr_rssi_2_pos = 0;
+      if (_findSubString((char *)payload_buffer,substr_rssi_2,recv_message.GetPayloadLength()+1,5,substr_rssi_2_pos)) {
+    
+	/* Extract Num RSSI1 Values */
+	payload_str = (char *)&payload_buffer[substr_rssi_2_pos+6];
+	for (unsigned int i = 0; i < 4; i++) {
+	  payload_str = _convertNextTokenToUInt(payload_str,null_int);
+	}
+	
+	payload_str = _convertNextTokenToUInt(payload_str,num_rssi_2_vals);
+	
+	/* Grab the RSSI1 values */
+	for (unsigned int i = 0; i < num_rssi_2_vals; i++) {
+	  payload_str = _convertNextTokenToUInt(payload_str,reflect_2_vals[i]);
+	}
+      }
+      else {
+	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! You requested values that are not being streamed!" << std::endl;
+	std::cerr << "Either use SetSickScanDataFormat to enable desired stream - or - try reinitializing." << std::endl;		
+      }
+
+    }
+      
     /* Assign number of measurements */
     num_measurements = num_dist_1_vals;
-
+    
     /* Success! */
     
+  }
+
+  /**
+   * Writes the current data format, scan area, and scan freq to EEPROM
+   */
+  void SickLMS1xx::WriteSickParamsToEEPROM( ) throw( SickTimeoutException, SickIOException ) {
+
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::WriteSickParamsToEEPROM: Device NOT Initialized!!!");
+    }
+
+    try {
+
+      /* Is the device streaming? */
+      if (_sick_streaming) {
+	_stopStreamingMeasurements();
+	_stopMeasuring();
+      }
+
+      std::cout << "\t*** Attempting to write to EEPROM..." << std::endl;
+      
+      /* Set the desired data format! */
+      _writeToEEPROM( );
+
+      std::cout << "\t\tSuccess!" << std::endl;
+      
+    }
+    
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::SaveParamsToEEPROM: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
   }
   
   /**
@@ -1190,7 +953,7 @@ namespace SickToolbox {
    */
   void SickLMS1xx::_setSickScanConfig( const sick_lms_1xx_scan_freq_t scan_freq,
 				       const sick_lms_1xx_scan_res_t scan_res,
-				       const int start_angle, const int stop_angle ) throw( SickTimeoutException, SickIOException, SickConfigException ) {
+				       const int start_angle, const int stop_angle ) throw( SickTimeoutException, SickIOException, SickErrorException ) {
 
     /* Verify valid inputs */
     if (!_validScanArea(start_angle, stop_angle)) {
@@ -1291,11 +1054,6 @@ namespace SickToolbox {
 
     try {
 
-      /* Set the authorized client access mode */
-      if (!_setAuthorizedClientAccessMode()) {
-	throw SickIOException("SickLMS1xx::_setSickScanConfig: _setAuthorizedClientAccessMode failed!");	
-      }
-
       /* Send message and get reply */
       _sendMessageAndGetReply(send_message, recv_message, "sAN", "mLMPsetscancfg");
 
@@ -1327,7 +1085,7 @@ namespace SickToolbox {
     
     /* Check if it worked... */
     if (payload_buffer[19] != '0') {
-	throw SickConfigException("SickLMS1xx::_setSickScanConfig: " + _intToSickConfigErrorStr(atoi((char *)&payload_buffer[19])));	      
+	throw SickErrorException("SickLMS1xx::_setSickScanConfig: " + _intToSickConfigErrorStr(atoi((char *)&payload_buffer[19])));
     }
 
     std::cout << "\t\tDevice configured!" << std::endl << std::endl;
@@ -1366,7 +1124,7 @@ namespace SickToolbox {
   /**
    * \brief Login as an authorized client
    */
-  bool SickLMS1xx::_setAuthorizedClientAccessMode() throw( SickTimeoutException, SickIOException ) {
+  void SickLMS1xx::_setAuthorizedClientAccessMode() throw( SickTimeoutException, SickErrorException, SickIOException ) {
 
     /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
@@ -1450,12 +1208,10 @@ namespace SickToolbox {
 
     /* Check Response */
     if (payload_buffer[18] != '1') {
-      std::cerr << "SickLMS1xx::_setAuthorizedClientAccessMode: Setting Access Mode Failed!" << std::endl;    
-      return false;
+      throw SickErrorException("SickLMS1xx::_setAuthorizedClientAccessMode: Setting Access Mode Failed!");    
     }
 
     /* Success! Woohoo! */
-    return true;
     
   }
 
@@ -1495,11 +1251,6 @@ namespace SickToolbox {
 
     try {
 
-      /* Set the authorized client access mode */
-      if (!_setAuthorizedClientAccessMode()) {
-	throw SickIOException("SickLMS1xx::_writeToEEPROM: _setAuthorizedClientAccessMode failed!");	
-      }
-      
       /* Send message and get reply */      
       _sendMessageAndGetReply(send_message, recv_message, "sAN", "mEEwriteall");
 
@@ -1573,7 +1324,7 @@ namespace SickToolbox {
     SickLMS1xxMessage recv_message;
 
     try {
-      
+
       /* Send message and get reply */      
       _sendMessageAndGetReply(send_message, recv_message, "sAN", "LMCstartmeas");
       
@@ -1686,30 +1437,20 @@ namespace SickToolbox {
    * \param dist_opt Desired distance returns (single-pulse or multi-pulse)
    * \param reflect_opt Desired reflectivity returns (none, 8-bit or 16-bit)
    */
-  void SickLMS1xx::_requestDataStreamByType( const sick_lms_1xx_dist_opt_t dist_opt,
-					     const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickConfigException, SickIOException ) {
-
-    std::cout << "\tRequesting " + _sickScanDataFormatToString(dist_opt,reflect_opt) << " data stream..." << std::endl;
+  void SickLMS1xx::_requestDataStream( ) throw( SickTimeoutException, SickConfigException, SickIOException ) {
+    
+    std::cout << "\tRequesting data stream..." << std::endl;
     
     try {
-
-      std::cout << "setting data format!" << std::endl;
       
-      /* Set the desired scan config! */
-      _setSickScanDataFormat(dist_opt,reflect_opt);
-
-      std::cout << "checking for measurement status" << std::endl;
-
       /* Wait for device to be measuring */
       _checkForMeasuringStatus();
-
-            std::cout << "start streaming" << std::endl;
       
       /* Request the data stream... */
       _startStreamingMeasurements();
       
     }
-
+    
     /* Handle config exceptions */
     catch (SickConfigException &sick_config_exception) {
       std::cerr << sick_config_exception.what() << std::endl;
@@ -2021,7 +1762,7 @@ namespace SickToolbox {
 
     /* Acquire the elapsed time since epoch */
     gettimeofday(&beg_time,NULL);
-
+    
     /* Get device status */
     _updateSickStatus( );
 
@@ -2034,7 +1775,7 @@ namespace SickToolbox {
 	try {
 	  
 	  /* Tell the device to start measuring ! */
-	  _startMeasuring( );
+	  _startMeasuring();
 	  first_pass = false;
 	  
 	}
@@ -2075,74 +1816,6 @@ namespace SickToolbox {
 
   }
 
-  /**
-   * Set device to output only range values
-   */
-  void SickLMS1xx::_restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException ) {
-
-     /* Allocate a single buffer for payload contents */
-    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
-
-    /* Set the command type */
-    payload_buffer[0]  = 's';
-    payload_buffer[1]  = 'M';
-    payload_buffer[2]  = 'N';
-    payload_buffer[3]  = ' ';
-    
-    /* Set the command */
-    payload_buffer[4]  = 'R';
-    payload_buffer[5]  = 'u';
-    payload_buffer[6]  = 'n';
-    
-    /* Construct command message */
-    SickLMS1xxMessage send_message(payload_buffer,7);
-
-    /* Setup container for recv message */
-    SickLMS1xxMessage recv_message;
-
-    try {
-
-      /* Set the authorized client access mode */
-      if (!_setAuthorizedClientAccessMode()) {
-	throw SickIOException("SickLMS1xx::_setSickScanDataRangeOnly: _setAuthorizedClientAccessMode failed!");	
-      }
-      
-      /* Send message and get reply */      
-      _sendMessageAndGetReply(send_message, recv_message, "sWA", "LMDscandatacfg");
-
-    }
-        
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* Handle write buffer exceptions */
-    catch (SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* A safety net */
-    catch (...) {
-      std::cerr << "SickLMS1xx::_restoreMeasuringMode: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    memset(payload_buffer,0,7);
-    recv_message.GetPayload(payload_buffer);
-    
-    /* Check return value */
-    if (payload_buffer[8] != '0') {
-      std::cerr << "SickLMS1xx::_restoreMeasuringMode: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-    /* Success! */
-
-  }
-  
   /**
    * Set device to output only range values
    */
@@ -2252,11 +1925,6 @@ namespace SickToolbox {
 
     try {
 
-      /* Set the authorized client access mode */
-      if (!_setAuthorizedClientAccessMode()) {
-	throw SickIOException("SickLMS1xx::_setSickScanDataFormat: _setAuthorizedClientAccessMode failed!");	
-      }
-      
       /* Send message and get reply */      
       _sendMessageAndGetReply(send_message, recv_message, "sWA", "LMDscandatacfg");
 
@@ -2282,6 +1950,69 @@ namespace SickToolbox {
 
     /* Success! */
     
+  }
+  
+  /**
+   * Set device to output only range values
+   */
+  void SickLMS1xx::_restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException ) {
+
+     /* Allocate a single buffer for payload contents */
+    uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
+
+    /* Set the command type */
+    payload_buffer[0]  = 's';
+    payload_buffer[1]  = 'M';
+    payload_buffer[2]  = 'N';
+    payload_buffer[3]  = ' ';
+    
+    /* Set the command */
+    payload_buffer[4]  = 'R';
+    payload_buffer[5]  = 'u';
+    payload_buffer[6]  = 'n';
+    
+    /* Construct command message */
+    SickLMS1xxMessage send_message(payload_buffer,7);
+
+    /* Setup container for recv message */
+    SickLMS1xxMessage recv_message;
+
+    try {
+
+      /* Send message and get reply */      
+      _sendMessageAndGetReply(send_message, recv_message, "sWA", "LMDscandatacfg");
+
+    }
+        
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* A safety net */
+    catch (...) {
+      std::cerr << "SickLMS1xx::_restoreMeasuringMode: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    memset(payload_buffer,0,7);
+    recv_message.GetPayload(payload_buffer);
+    
+    /* Check return value */
+    if (payload_buffer[8] != '0') {
+      std::cerr << "SickLMS1xx::_restoreMeasuringMode: Unknown exception!!!" << std::endl;
+      throw;
+    }
+
+    /* Success! */
+
   }
   
   /**
