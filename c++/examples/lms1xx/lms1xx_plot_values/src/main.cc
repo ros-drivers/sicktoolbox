@@ -72,7 +72,7 @@ int main(int argc, char * argv[]) {
     for (unsigned int i = 0; i < 1000 && running; i++) {
       
       /* Acquire the most recent scan from the Sick */
-      sick_lms_1xx.GetSickRange(range_vals,num_measurements);
+      sick_lms_1xx.GetSickMeasurements(range_vals,NULL,NULL,NULL,num_measurements);
       
       /* Populate the data vector */
       for(unsigned int j = 0; j < num_measurements; j++) {

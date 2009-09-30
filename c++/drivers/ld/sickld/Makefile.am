@@ -14,9 +14,9 @@ cc_sources= SickLD.cc \
             SickLDMessage.cc \
             SickLDBufferMonitor.cc
 
-library_includedir=$(includedir)/sickld-1.0/
+library_includedir=$(includedir)/sickld/
 library_include_HEADERS=$(lib_include_hh)
 
-lib_LTLIBRARIES=libsickld-1.0.la
-libsickld_1_0_la_SOURCES=$(hh_sources) $(cc_sources)
+lib_LTLIBRARIES=libsickld.la
+libsickld_la_SOURCES=$(hh_sources) $(cc_sources)
 AM_CPPFLAGS=-I$(top_srcdir)/c++/drivers/base/src

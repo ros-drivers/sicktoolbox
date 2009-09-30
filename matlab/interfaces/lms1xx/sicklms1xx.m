@@ -3,19 +3,19 @@
 %
 %  The Sick LIDAR Matlab/C++ Toolbox
 %
-%  File: sicklms.m
+%  File: sicklms2xx.m
 %  Auth: Jason C. Derenick and Thomas H. Miller
 %  Cont: derenick(at)lehigh(dot)edu
 %  Date: 11 January 2008
 %
-%  sicklms provides a Matlab mex interface for working with
+%  sicklms2xx provides a Matlab mex interface for working with
 %  Sick LMS 2xx model laser range finders.
 %
 %  COMMANDS:
 %
 %       1.) Initialize the Sick LMS 2xx
 %       -------------------------------------------------------------------
-%           RESULT = sicklms('init',DEV_PATH,SICK_BAUD);
+%           RESULT = sicklms2xx('init',DEV_PATH,SICK_BAUD);
 %
 %           Desc:
 %               Before the interface can be used, the Sick must be 
@@ -48,18 +48,18 @@
 %                           upon failure.
 %
 %           Example Usage:
-%               >> init_res = sicklms('init','/dev/ttyUSB0',500000);
+%               >> init_res = sicklms2xx('init','/dev/ttyUSB0',500000);
 %
 %       2.) Uninitialize the Sick LMS 2xx
 %       -------------------------------------------------------------------
 %           To uninitialize the device, you simply need to clear the
 %           mex file. In other words, enter the following:
 %
-%               >> clear sicklms;
+%               >> clear sicklms2xx;
 %
 %       3.) Setting the Sick LMS 2xx Variant
 %       -------------------------------------------------------------------
-%           sicklms('variant',SCAN_AREA,SCAN_RES);
+%           sicklms2xx('variant',SCAN_AREA,SCAN_RES);
 %
 %           Desc:
 %               The total scan area and angular resolution of the Sick
@@ -85,11 +85,11 @@
 %                 this command should always be used in a try-catch.
 %
 %           Example usage:
-%               >> sicklms('variant',180,0.50);
+%               >> sicklms2xx('variant',180,0.50);
 %
 %       4.) Grabbing Sick LMS 2xx Measurements
 %       -------------------------------------------------------------------
-%           DATA = sicklms('grab');
+%           DATA = sicklms2xx('grab');
 %
 %           Desc:
 %               Once initialized, data can then be requested from the
@@ -122,11 +122,11 @@
 %                      matrix.  This indicates recoverable failure.
 %
 %           Example Usage:
-%               >> data = sicklms('grab')
+%               >> data = sicklms2xx('grab')
 %
 %       5.) Displaying Sick LMS 2xx Information
 %       -------------------------------------------------------------------          
-%           sicklms('info');
+%           sicklms2xx('info');
 %
 %           Desc:
 %               Use this command to display Sick LMS 2xx status and
@@ -139,6 +139,6 @@
 %               None.
 %
 %           Example Usage:               
-%               >> sicklms('info')
+%               >> sicklms2xx('info')
 %
 %==========================================================================

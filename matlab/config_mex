@@ -43,7 +43,7 @@ fi
 
 echo
 echo "The Sick LIDAR Matlab/C++ Toolbox"
-echo "Config Script (Version 1.0)"
+echo "Config Script (Version 1.1)"
 echo
 
 # Check whether to clean the config

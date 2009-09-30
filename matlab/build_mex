@@ -5,20 +5,21 @@
 #  The Sick LIDAR Matlab/C++ Toolbox
 #
 #  File: build_mex
-#  Auth: Jason Derenick at Lehigh University
-#  Cont: derenick(at)lehigh(dot)edu
-#  Date: 10 March 2008
+#  Auth: Jason Derenick and Christopher Mansley
+#  Cont: jasonder(at)seas(dot)upenn(dot)edu
+#  Date: 28 September 2009
 #
-#  In:   BUILD_TYPE: 'ld' or 'lms' or 'both' (default: 'both') or 'clean'
+#  In:   BUILD_TYPE: 'ld','lms1xx','lms2xx','all' (default: 'all')
+#                     or 'clean'
 #
 #  Desc:
 #        This script builds the mex interface for the Sick Toolbox.
-#        If no arguments are supplied then it builds both the ld &
-#        lms interfaces.
+#        If no arguments are supplied then it builds all of Sick
+#        interfaces.
 #
-#        Us: build_mex [BUILD_TYPE=both]
+#        Us: build_mex [BUILD_TYPE=all]
 #        Ex: build_mex
-#        Ex: build_mex lms
+#        Ex: build_mex lms2xx
 #        Ex: build_mex clean
 #
 #==========================================================================
@@ -28,19 +29,20 @@ BUILD_DIR=build;
 CONF_DIR=.sickconf;
 
 # Define LMS and LD src dir names
-SICK_LD_SRC_DIR=sickld-1.0
-SICK_LMS_SRC_DIR=sicklms-1.0
+SICK_LD_SRC_DIR=sickld
+SICK_LMS_1XX_SRC_DIR=sicklms1xx
+SICK_LMS_2XX_SRC_DIR=sicklms2xx
 
 # Default build type
-BUILD_TYPE='both';
+BUILD_TYPE='all';
 
 # Check what to build
 if [ -n "$1" ]; then
 
   # Do they want help?
   if [ $1 = "--help" ]; then  
-    echo "usage: $0 [BUILD_TYPE=both]"
-    echo "example: $0 lms"
+    echo "usage: $0 [BUILD_TYPE=all]"
+    echo "example: $0 lms2xx"
     exit;
   fi
 
@@ -51,18 +53,19 @@ fi
 
 echo
 echo "The Sick LIDAR Matlab/C++ Toolbox"
-echo "Build Script (Version 1.0)"
+echo "Build Script (Version 1.1)"
 echo
 
 # Make sure its a valid option
 if [ $BUILD_TYPE = "--help" -o ! \
      $BUILD_TYPE = "ld" -a ! \
-     $BUILD_TYPE = "lms" -a ! \
-     $BUILD_TYPE = "both" -a ! \
+     $BUILD_TYPE = "lms1xx" -a ! \
+     $BUILD_TYPE = "lms2xx" -a ! \
+     $BUILD_TYPE = "all" -a ! \
      $BUILD_TYPE = "clean" ]; then
 
   echo "usage: bash $0 [BUILD_TYPE]"
-  echo "example: bash $0 lms"
+  echo "example: bash $0 lms2xx"
 
   exit;
 
@@ -125,7 +128,7 @@ if [ ! -e ./$BUILD_DIR ]; then
 
 fi
 
-if [ $BUILD_TYPE = "both" -o $BUILD_TYPE = "ld" ]; then
+if [ $BUILD_TYPE = "all" -o $BUILD_TYPE = "ld" ]; then
 
   # Build the mex and place in temp dir
   echo "Building Sick LD mex..."
@@ -151,16 +154,17 @@ if [ $BUILD_TYPE = "both" -o $BUILD_TYPE = "ld" ]; then
 
 fi
 
-if [ $BUILD_TYPE = "both" -o $BUILD_TYPE = "lms" ]; then
+if [ $BUILD_TYPE = "all" -o $BUILD_TYPE = "lms1xx" ]; then
 
-  echo "Building Sick LMS mex..."
+  # Build the mex and place in temp dir
+  echo "Building Sick LMS 1xx mex..."
 
-  $BIN_DIR/mex -g -output ./$BUILD_DIR/sicklms \
-                          interfaces/lms/lmsmex.cc \
-                          ../c++/drivers/lms/$SICK_LMS_SRC_DIR/SickLMSMessage.cc \
-                          ../c++/drivers/lms/$SICK_LMS_SRC_DIR/SickLMSBufferMonitor.cc \
-                          ../c++/drivers/lms/$SICK_LMS_SRC_DIR/SickLMS.cc \
-                          -I../c++/drivers/lms/$SICK_LMS_SRC_DIR/ \
+  $BIN_DIR/mex -g -output ./$BUILD_DIR/sicklms1xx \
+                          interfaces/lms1xx/lms1xxmex.cc \
+                          ../c++/drivers/lms1xx/$SICK_LMS_1XX_SRC_DIR/SickLMS1xxMessage.cc \
+                          ../c++/drivers/lms1xx/$SICK_LMS_1XX_SRC_DIR/SickLMS1xxBufferMonitor.cc \
+                          ../c++/drivers/lms1xx/$SICK_LMS_1XX_SRC_DIR/SickLMS1xx.cc \
+                          -I../c++/drivers/lms1xx/$SICK_LMS_1XX_SRC_DIR \
                           -I../c++/drivers/base/src
 
   if [ ! $? -eq 0 ]; then
@@ -170,7 +174,32 @@ if [ $BUILD_TYPE = "both" -o $BUILD_TYPE = "lms" ]; then
 
   echo "       Build complete!"
 
-  cp ./interfaces/lms/sicklms.m ./$BUILD_DIR;
+  cp ./interfaces/lms1xx/sicklms1xx.m ./$BUILD_DIR;
+
+  echo
+
+fi
+
+if [ $BUILD_TYPE = "all" -o $BUILD_TYPE = "lms2xx" ]; then
+
+  echo "Building Sick LMS 2xx mex..."
+
+  $BIN_DIR/mex -g -output ./$BUILD_DIR/sicklms2xx \
+                          interfaces/lms2xx/lms2xxmex.cc \
+                          ../c++/drivers/lms2xx/$SICK_LMS_2XX_SRC_DIR/SickLMS2xxMessage.cc \
+                          ../c++/drivers/lms2xx/$SICK_LMS_2XX_SRC_DIR/SickLMS2xxBufferMonitor.cc \
+                          ../c++/drivers/lms2xx/$SICK_LMS_2XX_SRC_DIR/SickLMS2xx.cc \
+                          -I../c++/drivers/lms2xx/$SICK_LMS_2XX_SRC_DIR/ \
+                          -I../c++/drivers/base/src
+
+  if [ ! $? -eq 0 ]; then
+    echo "$0: Build failed!"
+    exit;
+  fi
+
+  echo "       Build complete!"
+
+  cp ./interfaces/lms2xx/sicklms2xx.m ./$BUILD_DIR;
 
   echo
 

@@ -9,7 +9,7 @@ AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([c++/drivers/base/src/SickConfig.hh])
 	
 # Set source dirs
-AX_SICK_LD_SRC_DIR(sickld-1.0)
+AX_SICK_LD_SRC_DIR(sickld)
 AX_SICK_LMS_1XX_SRC_DIR(sicklms1xx)
 AX_SICK_LMS_2XX_SRC_DIR(sicklms2xx)
 	
@@ -97,7 +97,7 @@ AC_CONFIG_FILES([Makefile
                  c++/examples/lms2xx/lms2xx_subrange/src/Makefile		 
 		 c++/drivers/Makefile
                  c++/drivers/ld/Makefile
-                 c++/drivers/ld/sickld-1.0/Makefile
+                 c++/drivers/ld/sickld/Makefile
                  c++/drivers/lms1xx/Makefile
                  c++/drivers/lms1xx/sicklms1xx/Makefile
 		 c++/drivers/lms2xx/Makefile

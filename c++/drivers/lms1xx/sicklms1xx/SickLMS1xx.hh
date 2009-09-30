@@ -21,8 +21,8 @@
 #define DEFAULT_SICK_LMS_1XX_IP_ADDRESS                   "192.168.0.1"                 ///< Default IP Address
 #define DEFAULT_SICK_LMS_1XX_TCP_PORT                            (2111)                 ///< Sick LMS 1xx TCP/IP Port
 #define DEFAULT_SICK_LMS_1XX_CONNECT_TIMEOUT                  (1000000)                 ///< Max time for establishing connection (usecs)
-#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (1000000)                 ///< Max time for reply (usecs)
-#define DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT                 (300000000)                 ///< Max time it should take to change status  
+#define DEFAULT_SICK_LMS_1XX_MESSAGE_TIMEOUT                  (5000000)                 ///< Max time for reply (usecs)
+#define DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT                  (60000000)                 ///< Max time it should take to change status  
 
 #define SICK_LMS_1XX_SCAN_AREA_MIN_ANGLE                      (-450000)                 ///< -45 degrees (1/10000) degree
 #define SICK_LMS_1XX_SCAN_AREA_MAX_ANGLE                      (2250000)                 ///< 225 degrees (1/10000) degree
@@ -60,49 +60,42 @@ namespace SickToolbox {
       */
     enum sick_lms_1xx_status_t {
        
-       SICK_LMS_1XX_STATUS_UNDEFINED = 0x00,                                             ///< LMS 1xx status undefined
-       SICK_LMS_1XX_STATUS_INITIALIZATION = 0x01,                                        ///< LMS 1xx initializing
-       SICK_LMS_1XX_STATUS_CONFIGURATION = 0x02,                                         ///< LMS 1xx configuration
-       SICK_LMS_1XX_STATUS_IDLE = 0x03,                                                  ///< LMS 1xx is idle
-       SICK_LMS_1XX_STATUS_ROTATED = 0x04,                                               ///< LMS 1xx mirror rotating
-       SICK_LMS_1XX_STATUS_IN_PREP = 0x05,                                               ///< LMS 1xx in preparation
-       SICK_LMS_1XX_STATUS_READY = 0x06,                                                 ///< LMS 1xx is ready
-       SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT = 0x07                                  ///< LMS 1xx is ready to give measurements 
+       SICK_LMS_1XX_STATUS_UNDEFINED = 0x00,                                            ///< LMS 1xx status undefined
+       SICK_LMS_1XX_STATUS_INITIALIZATION = 0x01,                                       ///< LMS 1xx initializing
+       SICK_LMS_1XX_STATUS_CONFIGURATION = 0x02,                                        ///< LMS 1xx configuration
+       SICK_LMS_1XX_STATUS_IDLE = 0x03,                                                 ///< LMS 1xx is idle
+       SICK_LMS_1XX_STATUS_ROTATED = 0x04,                                              ///< LMS 1xx mirror rotating
+       SICK_LMS_1XX_STATUS_IN_PREP = 0x05,                                              ///< LMS 1xx in preparation
+       SICK_LMS_1XX_STATUS_READY = 0x06,                                                ///< LMS 1xx is ready
+       SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT = 0x07                                 ///< LMS 1xx is ready to give measurements 
        
      };
 
     /*!
-     * \enum sick_lms_1xx_dist_opt_t
-     * \brief Defines the Sick LMS 1xx distance options
-     * This enum is for specifiying the desired range returns.
+     * \enum sick_lms_1xx_scan_format_t 
+     * \brief Defines the Sick LMS 1xx scan types
+     * This enum is for specifiying the desired scan returns.
      */
-    enum sick_lms_1xx_dist_opt_t {
+    enum sick_lms_1xx_scan_format_t {
       
-      SICK_LMS_1XX_DIST_SINGLE_PULSE = 0x00,                                            ///< Single pulse distance returns
-      SICK_LMS_1XX_DIST_DOUBLE_PULSE = 0x01                                             ///< Multi-pulse distance returns
+      SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_NONE = 0x00,                   ///< Single-pulse dist, no reflect
+      SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_8BIT = 0x01,                   ///< Single-pulse dist, 8bit reflect
+      SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_16BIT = 0x02,                  ///< Single-pulse dist, 16bit reflect            
+      SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_NONE = 0x03,                   ///< Double-pulse dist, no reflect
+      SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_8BIT = 0x04,                   ///< Double-pulse dist, 8bit reflect
+      SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_16BIT = 0x05,                  ///< Double-pulse dist, 16bit reflect          
+      SICK_LMS_1XX_SCAN_FORMAT_UNKNOWN = 0xFF                                           ///< Unknown format
       
     };
-    
+
     /*!
-     * \enum sick_lms_1xx_reflect_opt_t
-     * \brief Defines the Sick LMS 1xx reflectivity options.
-     * This enum is for specifying the desired reflectivity returns.
-     */
-    enum sick_lms_1xx_reflect_opt_t {
-      
-      SICK_LMS_1XX_REFLECT_NONE = 0x00,                                                  ///< No reflectivity returns
-      SICK_LMS_1XX_REFLECT_8BIT = 0x01,                                                  ///< 8bit reflectivity
-      SICK_LMS_1XX_REFLECT_16BIT = 0x02                                                  ///< 16bit reflectivity
-      
-    };    
-    
-    /*
      * \enum sick_lms_1xx_scan_freq_t 
      * \brief Defines the Sick LMS 1xx scan frequency.
      * This enum lists all of the Sick LMS 1xx scan frequencies.
      */
     enum sick_lms_1xx_scan_freq_t {
-      
+
+      SICK_LMS_1XX_SCAN_FREQ_UNKNOWN = 0x00,                                            ///< LMS 1xx scan freq unknown
       SICK_LMS_1XX_SCAN_FREQ_25 = 0x09C4,                                               ///< LMS 1xx scan freq 25Hz
       SICK_LMS_1XX_SCAN_FREQ_50 = 0X1388                                                ///< LMS 1xx scan freq 50Hz
 
@@ -114,7 +107,8 @@ namespace SickToolbox {
      * This enum lists all of the Sick LMS 1xx scan resolutions.
      */
     enum sick_lms_1xx_scan_res_t {
-      
+
+      SICK_LMS_1XX_SCAN_RES_UNKNOWN = 0x00,                                             ///< LMS 1xx scab res unknown
       SICK_LMS_1XX_SCAN_RES_25 = 0x09C4,                                                ///< LMS 1xx scan res 0.25 deg
       SICK_LMS_1XX_SCAN_RES_50 = 0x1388                                                 ///< LMS 1xx scan res 0.25 deg
 
@@ -141,7 +135,7 @@ namespace SickToolbox {
 		const uint16_t sick_tcp_port = DEFAULT_SICK_LMS_1XX_TCP_PORT );
     
     /** Initializes the Sick LD unit (use scan areas defined in flash) */
-    void Initialize( ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException );
+    void Initialize( const bool disp_banner = true ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException );
 
     /** Sets the Sick LMS1xx scan frequency and scan resolution */
     void SetSickScanFreqAndRes( const sick_lms_1xx_scan_freq_t scan_freq,
@@ -152,8 +146,7 @@ namespace SickToolbox {
 			  const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickErrorException ); 
 
     /** Sets the sick scan data format */
-    void SetSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
-				const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException );
+    void SetSickScanDataFormat( const sick_lms_1xx_scan_format_t scan_format ) throw( SickTimeoutException, SickIOException, SickThreadException, SickErrorException );
     
     /** Get the Sick Range Measurements */
     void GetSickMeasurements( unsigned int * const range_1_vals,
@@ -166,28 +159,18 @@ namespace SickToolbox {
     void WriteSickParamsToEEPROM( ) throw( SickTimeoutException, SickIOException );
     
     /** Uninitializes the Sick LD unit */
-    void Uninitialize( ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException );
+    void Uninitialize( const bool disp_banner = true ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException );
+
+    /** Utility function for converting integer to scan frequency */
+    sick_lms_1xx_scan_freq_t IntToSickScanFreq( const int scan_freq ) const;
+    
+    /** Utility function for converting double to scan resolution */
+    sick_lms_1xx_scan_res_t DoubleToSickScanRes( const double scan_res ) const;
 
     /** Destructor */
     ~SickLMS1xx();
 
   private:
-
-//     /*!
-//      * \enum sick_lms_1xx_scan_type_t 
-//      * \brief Defines the Sick LMS 1xx scan types
-//      * This enum is for specifiying the desired scan returns.
-//      */
-//     enum sick_lms_1xx_scan_type_t {
-      
-//       SICK_LMS_1XX_DIST_SINGLE_PULSE_REFLECT_NO = 0x00,                              ///< Single-pulse dist, no reflect
-//       SICK_LMS_1XX_DIST_SINGLE_PULSE_REFLECT_8BIT = 0x01,                            ///< Single-pulse dist, 8bit reflect
-//       SICK_LMS_1XX_DIST_SINGLE_PULSE_REFLECT_16BIT = 0x02,                           ///< Single-pulse dist, 16bit reflect            
-//       SICK_LMS_1XX_DIST_DOUBLE_PULSE_REFLECT_NO = 0x03,                              ///< Double-pulse dist, no reflect
-//       SICK_LMS_1XX_DIST_DOUBLE_PULSE_REFLECT_8BIT = 0x04,                            ///< Single-pulse dist, 8bit reflect
-//       SICK_LMS_1XX_DIST_DOUBLE_PULSE_REFLECT_16BIT = 0x05,                           ///< Single-pulse dist, 16bit reflect          
-      
-//     };
 
     /** The Sick LMS 1xx IP address */
     std::string _sick_ip_address;
@@ -211,7 +194,10 @@ namespace SickToolbox {
     bool _sick_streaming;
     
     /** Setup the connection parameters and establish TCP connection! */
-    void _setupConnection( ) throw( SickIOException, SickTimeoutException );  
+    void _setupConnection( ) throw( SickIOException, SickTimeoutException );
+
+    /** Re-initialized the device */
+    void _reinitialize( ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException );     
 
     /** Teardown the connection to the Sick LD */
     void _teardownConnection( ) throw( SickIOException );
@@ -263,14 +249,13 @@ namespace SickToolbox {
     void _startStreamingMeasurements(  )throw( SickTimeoutException, SickIOException );
 
     /** Stop streaming measurements */
-    void _stopStreamingMeasurements( ) throw( SickTimeoutException, SickIOException );
+    void _stopStreamingMeasurements( const bool disp_banner = true ) throw( SickTimeoutException, SickIOException );
 
     /** Set device to measuring mode */
     void _checkForMeasuringStatus( unsigned int timeout_value = DEFAULT_SICK_LMS_1XX_STATUS_TIMEOUT ) throw( SickTimeoutException, SickIOException );
 
     /** Sets the sick scan data format */
-    void _setSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
-				 const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException );
+    void _setSickScanDataFormat( const sick_lms_1xx_scan_format_t scan_format ) throw( SickTimeoutException, SickIOException, SickThreadException, SickErrorException );
     
     /** Restore device to measuring mode */
     void _restoreMeasuringMode( ) throw( SickTimeoutException, SickIOException );
@@ -288,8 +273,7 @@ namespace SickToolbox {
     void _printInitFooter( ) const;
 
     /** Utility function for returning scan format as string */
-    std::string _sickScanDataFormatToString( const sick_lms_1xx_dist_opt_t dist_opt,
-					     const sick_lms_1xx_reflect_opt_t reflect_opt ) const;
+    std::string _sickScanDataFormatToString( const sick_lms_1xx_scan_format_t scan_format ) const;
 
     /** Utility function to convert config error int to str */
     std::string _intToSickConfigErrorStr( const int error ) const;
@@ -306,10 +290,16 @@ namespace SickToolbox {
   };
 
   /*!
-   * \typedef sick_lms_1xx_type_t
+   * \typedef sick_lms_1xx_status_t
    * \brief Makes working w/ SickLMS1xx::sick_lms_1xx_status_t a bit easier
    */
   typedef SickLMS1xx::sick_lms_1xx_status_t sick_lms_1xx_status_t;
+
+  /*!
+   * \typedef sick_lms_1xx_scan_format_t
+   * \brief Makes working w/ SickLMS1xx::sick_lms_1xx_scan_format_t a bit easier
+   */
+  typedef SickLMS1xx::sick_lms_1xx_scan_format_t sick_lms_1xx_scan_format_t;
   
 } //namespace SickToolbox
   

@@ -166,6 +166,9 @@ namespace SickToolbox {
       throw SickThreadException("SickBufferMonitor::StartMonitor: pthread_create() failed!");
     }
 
+    /* Set the flag to continue grabbing data */
+    _continue_grabbing = true;
+    
   }
 
   /**
@@ -347,7 +350,7 @@ namespace SickToolbox {
       /* Initialize and set the file descriptor set for select */
       FD_ZERO(&file_desc_set);
       FD_SET(_sick_fd,&file_desc_set);
-
+      
       /* Setup the timeout structure */
       memset(&timeout_val,0,sizeof(timeout_val));   // Initialize the buffer
       timeout_val.tv_usec = timeout_value;          // Wait for specified time before throwing a timeout
@@ -421,7 +424,7 @@ namespace SickToolbox {
 
  	/* Acquire the most recent message */
 	buffer_monitor->AcquireDataStream();	  
-
+	
 	if (!buffer_monitor->_continue_grabbing) { // should the thread continue grabbing
 	  buffer_monitor->ReleaseDataStream();
 	  break;
@@ -434,7 +437,7 @@ namespace SickToolbox {
 	buffer_monitor->_acquireMessageContainer();	
 	buffer_monitor->_recv_msg_container = curr_message;
  	buffer_monitor->_releaseMessageContainer();
-	
+
       }
 
       /* Make sure there wasn't a serious error reading from the buffer */
