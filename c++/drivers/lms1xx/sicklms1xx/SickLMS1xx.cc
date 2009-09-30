@@ -19,6 +19,7 @@
 /* Implementation dependencies */
 #include <string>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <sys/socket.h>       // for socket function definitions
