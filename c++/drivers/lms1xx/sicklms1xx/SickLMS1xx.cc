@@ -66,28 +66,43 @@ namespace SickToolbox {
   /**
    * \brief Initializes the driver and syncs it with Sick LMS 1xx unit. Uses flash params.
    */
-  void SickLMS1xx::Initialize( ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException ) {
+  void SickLMS1xx::Initialize( const bool disp_banner  ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException ) {
 
-    std::cout << "\t*** Attempting to initialize the Sick LMS 1xx..." << std::endl; 
-
+    if (disp_banner) {
+      std::cout << "\t*** Attempting to initialize the Sick LMS 1xx..." << std::endl; 
+    }
+    
     try {
       
       /* Attempt to connect to the Sick LD */
-      std::cout << "\tAttempting to connect to Sick LMS 1xx @ " << _sick_ip_address << ":" << _sick_tcp_port << std::endl;
+      if (disp_banner) {
+	std::cout << "\tAttempting to connect to Sick LMS 1xx @ " << _sick_ip_address << ":" << _sick_tcp_port << std::endl;
+      }
       _setupConnection();
-      std::cout << "\t\tConnected to Sick LMS 1xx!" << std::endl;
-
+      if (disp_banner) {
+	std::cout << "\t\tConnected to Sick LMS 1xx!" << std::endl;
+      }
+      
       /* Start the buffer monitor */
-      std::cout << "\tAttempting to start buffer monitor..." << std::endl;
+      if (disp_banner) {
+	std::cout << "\tAttempting to start buffer monitor..." << std::endl;
+      }
       _startListening();
-      std::cout << "\t\tBuffer monitor started!" << std::endl;
-    
+      if (disp_banner) {
+	std::cout << "\t\tBuffer monitor started!" << std::endl;
+      }
+      
       /* Ok, lets sync the driver with the Sick */
-      std::cout << "\tSyncing driver with Sick..." << std::endl;
+      if (disp_banner) {
+	std::cout << "\tSyncing driver with Sick..." << std::endl;
+      }
       _getSickScanConfig();
       _setAuthorizedClientAccessMode();
-      std::cout << "\t\tSuccess!" << std::endl;
-      
+      if (disp_banner) {
+	std::cout << "\t\tSuccess!" << std::endl;
+	_printInitFooter();  	
+      }
+	
     }
     
     catch(SickIOException &sick_io_exception) {
@@ -117,9 +132,7 @@ namespace SickToolbox {
     
     //std::cout << "\t\tSynchronized!" << std::endl;
     _sick_initialized = true;
-    
-    _printInitFooter();
-    
+
     /* Success */
   }
 
@@ -142,7 +155,6 @@ namespace SickToolbox {
       /* Is the device streaming? */
       if (_sick_streaming) {
 	_stopStreamingMeasurements();
-	_stopMeasuring();
       }
 
       /* Set the desired configuration */
@@ -202,7 +214,6 @@ namespace SickToolbox {
       /* Is the device streaming? */
       if (_sick_streaming) {
 	_stopStreamingMeasurements();
-	_stopMeasuring();
       }
 
       /* Set the desired configuration */
@@ -242,8 +253,7 @@ namespace SickToolbox {
   /**
    * Set device to output only range values
    */
-  void SickLMS1xx::SetSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
-					  const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException ) {
+  void SickLMS1xx::SetSickScanDataFormat( const sick_lms_1xx_scan_format_t scan_format ) throw( SickTimeoutException, SickIOException, SickThreadException, SickErrorException ) {
 
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
@@ -255,13 +265,12 @@ namespace SickToolbox {
       /* Is the device streaming? */
       if (_sick_streaming) {
 	_stopStreamingMeasurements();
-	_stopMeasuring();
       }
 
-      std::cout << "\t*** Attempting to set data format..." << std::endl;
+      std::cout << "\t*** Setting scan format " << _sickScanDataFormatToString(scan_format) << "..." << std::endl;
       
       /* Set the desired data format! */
-      _setSickScanDataFormat(dist_opt,reflect_opt);
+      _setSickScanDataFormat(scan_format);
 
       std::cout << "\t\tSuccess!" << std::endl;
       
@@ -424,8 +433,8 @@ namespace SickToolbox {
 	}
       }
       else {
-	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! You requested values that are not being streamed!" << std::endl;
-	std::cerr << "Either use SetSickScanDataFormat to enable desired stream - or - try reinitializing." << std::endl;
+	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! It seems you are expecting double-pulse range values, which are not being streamed! ";
+	std::cerr << "Use SetSickScanDataFormat to configure the LMS 1xx to stream these values - or - set the corresponding buffer input to NULL to avoid this warning." << std::endl;	
       }
 	
     }
@@ -455,8 +464,8 @@ namespace SickToolbox {
 	}
       }
       else {
-	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! You requested values that are not being streamed!" << std::endl;
-	std::cerr << "Either use SetSickScanDataFormat to enable desired stream - or - try reinitializing." << std::endl;	
+	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! It seems you are expecting single-pulse reflectivity values, which are not being streamed! ";
+	std::cerr << "Use SetSickScanDataFormat to configure the LMS 1xx to stream these values - or - set the corresponding buffer input to NULL to avoid this warning." << std::endl;	
       }
 	  
     }
@@ -486,8 +495,8 @@ namespace SickToolbox {
 	}
       }
       else {
-	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! You requested values that are not being streamed!" << std::endl;
-	std::cerr << "Either use SetSickScanDataFormat to enable desired stream - or - try reinitializing." << std::endl;		
+	std::cerr << "SickLMS1xx::GetSickMeasurements: WARNING! It seems you are expecting double-pulse reflectivity values, which are not being streamed! ";
+	std::cerr << "Use SetSickScanDataFormat to configure the LMS 1xx to stream these values - or - set the corresponding buffer input to NULL to avoid this warning." << std::endl;	
       }
 
     }
@@ -514,7 +523,6 @@ namespace SickToolbox {
       /* Is the device streaming? */
       if (_sick_streaming) {
 	_stopStreamingMeasurements();
-	_stopMeasuring();
       }
 
       std::cout << "\t*** Attempting to write to EEPROM..." << std::endl;
@@ -548,33 +556,45 @@ namespace SickToolbox {
   /**
    * \brief Tear down the connection between the host and the Sick LD
    */
-  void SickLMS1xx::Uninitialize( ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException ){
+  void SickLMS1xx::Uninitialize( const bool disp_banner ) throw( SickIOException, SickTimeoutException, SickErrorException, SickThreadException ){
 
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
       throw SickIOException("SickLMS1xx::Uninitialize: Device NOT Initialized!!!");
     }
 
-    std::cout << std::endl << "\t*** Attempting to uninitialize the Sick LMS 1xx..." << std::endl; 
-  
+    if (disp_banner) {
+      std::cout << std::endl << "\t*** Attempting to uninitialize the Sick LMS 1xx..." << std::endl; 
+    }
+      
     /* If necessary, tell the Sick LD to stop streaming data */
     try {
 
       /* Is the device streaming? */
       if (_sick_streaming) {
-	_stopStreamingMeasurements();
-	_stopMeasuring();
+	_stopStreamingMeasurements(disp_banner);
       }
       
       /* Attempt to cancel the buffer monitor */
-      std::cout << "\tAttempting to cancel buffer monitor..." << std::endl;
+      if (disp_banner) {
+	std::cout << "\tAttempting to cancel buffer monitor..." << std::endl;
+      }
       _stopListening();
-      std::cout << "\t\tBuffer monitor canceled!" << std::endl;
-    
+      if (disp_banner) {
+	std::cout << "\t\tBuffer monitor canceled!" << std::endl;
+      }
+	
       /* Attempt to close the tcp connection */
-      std::cout << "\tClosing connection to Sick LMS 1xx..." << std::endl;
+      if (disp_banner) {
+	std::cout << "\tClosing connection to Sick LMS 1xx..." << std::endl;
+      }
       _teardownConnection();
 
+      if (disp_banner) {
+	std::cout << "\t\tConnection closed!" << std::endl;
+	std::cout << "\t*** Uninit. complete - Sick LMS 1xx is now offline!" << std::endl; 
+      }
+      
     }
            
     /* Handle a timeout! */
@@ -607,15 +627,43 @@ namespace SickToolbox {
       throw;
     }  
 
-    std::cout << "\t\tConnection closed!" << std::endl;
-
-    std::cout << "\t*** Uninit. complete - Sick LMS 1xx is now offline!" << std::endl; 
-
     /* Mark the device as uninitialized */
     _sick_initialized = false;
   
     /* Success! */
   }
+  
+  /**
+   * \brief Convert integer to corresponding sick_lms_1xx_scan_freq_t
+   */
+  SickLMS1xx::sick_lms_1xx_scan_freq_t SickLMS1xx::IntToSickScanFreq( const int scan_freq ) const {
+
+    if (scan_freq == 25) {
+      return SICK_LMS_1XX_SCAN_FREQ_25;
+    }
+    else if (scan_freq == 50) {
+      return SICK_LMS_1XX_SCAN_FREQ_50;
+    }
+
+    return SICK_LMS_1XX_SCAN_FREQ_UNKNOWN;
+    
+  }
+
+  /**
+   * \brief Convert double to corresponding sick_lms_1xx_scan_res_t
+   */
+  SickLMS1xx::sick_lms_1xx_scan_res_t SickLMS1xx::DoubleToSickScanRes( const double scan_res ) const {
+
+    if (scan_res == 0.25) {
+      return SICK_LMS_1XX_SCAN_RES_25;
+    }
+    else if (scan_res == 0.50) {
+      return SICK_LMS_1XX_SCAN_RES_50;
+    }
+
+    return SICK_LMS_1XX_SCAN_RES_UNKNOWN;
+    
+  }  
 
   /**
    * \brief Establish a TCP connection to the unit
@@ -626,7 +674,7 @@ namespace SickToolbox {
     if ((_sick_fd = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP)) < 0) {
       throw SickIOException("SickLMS1xx::_setupConnection: socket() failed!");
     }
-
+    
     /* Initialize the buffer */
     memset(&_sick_inet_address_info,0,sizeof(struct sockaddr_in));
   
@@ -689,7 +737,7 @@ namespace SickToolbox {
 	else if (num_active_files == 0) {
 	
 	  /* A timeout has occurred! */
-	  throw SickTimeoutException("SickLMS1xx::_setupConnection: select() timeout!");	
+	  throw SickTimeoutException("SickLMS1xx::_setupConnection: select() timeout!");
 
 	}
 	else {
@@ -724,8 +772,57 @@ namespace SickToolbox {
     /* Success */
   }
 
-  
-   /**
+  /**
+   * \brief Re-initializes the Sick LMS 1xx
+   */
+  void SickLMS1xx::_reinitialize( ) throw( SickIOException, SickThreadException, SickTimeoutException, SickErrorException ) {
+
+    try {
+
+      //std::cout << "\t*** Reinitializing Sick LMS 1xx..." << std::endl;
+      
+      /* Uninitialize the device */
+      Uninitialize(false);
+
+      /* Initialize the device */
+      Initialize(false);
+
+      //std::cout << "\t\tSuccess!" << std::endl;
+      
+    }
+
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
+    
+    /* Handle write buffer exceptions */
+    catch (SickIOException &sick_io_exception) {
+      std::cerr << sick_io_exception.what() << std::endl;
+      throw;
+    }
+
+    /* Handle a timeout! */
+    catch (SickThreadException &sick_thread_exception) {
+      std::cerr << sick_thread_exception.what() << std::endl;
+      throw;
+    }
+
+    /* Handle a timeout! */
+    catch (SickErrorException &sick_error_exception) {
+      std::cerr << sick_error_exception.what() << std::endl;
+      throw;
+    }
+    
+    catch (...) {
+      std::cerr << "SickLMS1xx::_reinitialize: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+  }
+
+  /**
     * \brief Teardown TCP connection to Sick LD
     */
   void SickLMS1xx::_teardownConnection( ) throw( SickIOException ) {
@@ -736,7 +833,7 @@ namespace SickToolbox {
      }
      
    }
-
+  
   /**
    * \brief Get the status of the Sick LD
    */
@@ -963,7 +1060,7 @@ namespace SickToolbox {
     /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
 
-    std::cout << "\t*** Attempting to configure device..." << std::endl;
+    std::cout << std::endl << "\t*** Attempting to configure device..." << std::endl;
     
     /* Set the command type */
     payload_buffer[0]  = 's';
@@ -1438,8 +1535,8 @@ namespace SickToolbox {
    * \param reflect_opt Desired reflectivity returns (none, 8-bit or 16-bit)
    */
   void SickLMS1xx::_requestDataStream( ) throw( SickTimeoutException, SickConfigException, SickIOException ) {
-    
-    std::cout << "\tRequesting data stream..." << std::endl;
+
+    std::cout << std::endl << "\tRequesting data stream..." << std::endl;
     
     try {
       
@@ -1563,42 +1660,42 @@ namespace SickToolbox {
       
 //       /* Verify the number of channels */
 //       switch (scan_type) {
-//       case SICK_LMS_1XX_DIST_SINGLE_PULSE_REFLECT_NONE:
+//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_NONE:
 // 	{
 // 	  if (num_channels_16 != 1 || num_channels_8 != 0) {
 // 	    verified = false;
 // 	  }
 // 	  break;
 // 	}
-//       case SICK_LMS_1XX_DIST_SINGLE_PULSE_REFLECT_8BITBIT:
+//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_8BITBIT:
 // 	{
 // 	  if (num_channels_16 != 1 || num_channels_8 != 1) {
 // 	    verified = false;
 // 	  }
 // 	  break;
 // 	}
-//       case SICK_LMS_1XX_DIST_SINGLE_PULSE_REFLECT_16BITBIT:
+//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_16BITBIT:
 // 	{
 // 	  if (num_channels_16 != 2 || num_channels_8 != 0) {
 // 	    verified = false;
 // 	  }
 // 	  break;
 // 	}
-//       case SICK_LMS_1XX_DIST_DOUBLE_PULSE_REFLECT_NONE:
+//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_NONE:
 // 	{
 // 	  if (num_channels_16 != 2 || num_channels_8 != 0) {
 // 	    verified = false;
 // 	  }
 // 	  break;
 // 	}
-//       case SICK_LMS_1XX_DIST_DOUBLE_PULSE_REFLECT_8BITBIT:
+//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_8BITBIT:
 // 	{
 // 	  if (num_channels_16 != 2 || num_channels_8 != 2) {
 // 	    verified = false;
 // 	  }	
 // 	  break;
 // 	}
-//       case SICK_LMS_1XX_DIST_DOUBLE_PULSE_REFLECT_16BITBIT:
+//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_16BITBIT:
 // 	{
 // 	  if (num_channels_16 != 4 || num_channels_8 != 0) {
 // 	    verified = false;
@@ -1689,10 +1786,12 @@ namespace SickToolbox {
   /**
    * \brief Stop Measurment Stream
    */
-  void SickLMS1xx::_stopStreamingMeasurements( ) throw( SickTimeoutException, SickIOException ) {
+  void SickLMS1xx::_stopStreamingMeasurements( const bool disp_banner ) throw( SickTimeoutException, SickIOException ) {
 
-    std::cout << "\tStopping data stream..." << std::endl;
-    
+    if (disp_banner) {
+      std::cout << "\tStopping data stream..." << std::endl;
+    }
+      
     /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
     
@@ -1745,8 +1844,10 @@ namespace SickToolbox {
     }
 
     /* Success! */
-    std::cout << "\t\tStream stopped!" << std::endl;
-
+    if (disp_banner) {
+      std::cout << "\t\tStream stopped!" << std::endl;
+    }
+    
     _sick_streaming = false;
     
   }
@@ -1801,7 +1902,7 @@ namespace SickToolbox {
       }
 
       /* Sleep a little bit */
-      usleep(10000);
+      usleep(1000);
       
       /* Check whether the allowed time has expired */
       gettimeofday(&end_time,NULL);    
@@ -1819,8 +1920,7 @@ namespace SickToolbox {
   /**
    * Set device to output only range values
    */
-  void SickLMS1xx::_setSickScanDataFormat( const sick_lms_1xx_dist_opt_t dist_opt,
-					   const sick_lms_1xx_reflect_opt_t reflect_opt ) throw( SickTimeoutException, SickIOException ) {
+  void SickLMS1xx::_setSickScanDataFormat( const sick_lms_1xx_scan_format_t scan_format ) throw( SickTimeoutException, SickIOException, SickThreadException, SickErrorException ) {
     
     /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH] = {0};
@@ -1851,7 +1951,9 @@ namespace SickToolbox {
     /* Specify the channel */
     payload_buffer[19] = '0'; 
 
-    if (dist_opt == SICK_LMS_1XX_DIST_SINGLE_PULSE) {
+    if (scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_NONE ||
+	scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_8BIT ||
+	scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_16BIT) {
       payload_buffer[20] = '1';
     }
     else {
@@ -1866,7 +1968,8 @@ namespace SickToolbox {
     payload_buffer[24] = ' ';
 
     /* Send remission values? */
-    if (reflect_opt == SICK_LMS_1XX_REFLECT_NONE) {
+    if (scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_NONE ||
+	scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_NONE) {
       payload_buffer[25] = '0';   // 0 = no, 1 = yes
     }
     else {
@@ -1875,7 +1978,8 @@ namespace SickToolbox {
     payload_buffer[26] = ' ';
     
     /* Remission resolution */
-    if (reflect_opt == SICK_LMS_1XX_REFLECT_16BIT) {
+    if (scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_16BIT ||
+	scan_format == SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_16BIT) {
       payload_buffer[27] = '1';   // 0 = 8bit, 1 = 16bit
     }
     else {
@@ -1928,6 +2032,9 @@ namespace SickToolbox {
       /* Send message and get reply */      
       _sendMessageAndGetReply(send_message, recv_message, "sWA", "LMDscandatacfg");
 
+      /* Reinitialize the Sick so it uses the requested format */
+      _reinitialize();
+      
     }
         
     /* Handle a timeout! */
@@ -1941,8 +2048,19 @@ namespace SickToolbox {
       std::cerr << sick_io_exception.what() << std::endl;
       throw;
     }
+
+    /* Handle thread exception */
+    catch (SickThreadException &sick_thread_exception) {
+      std::cerr << sick_thread_exception.what() << std::endl;
+      throw;
+    }
+
+    /* Handle Sick error */
+    catch (SickErrorException &sick_error_exception) {
+      std::cerr << sick_error_exception.what() << std::endl;
+      throw;
+    }
     
-    /* A safety net */
     catch (...) {
       std::cerr << "SickLMS1xx::_setSickScanDataFormat: Unknown exception!!!" << std::endl;
       throw;
@@ -2216,31 +2334,26 @@ namespace SickToolbox {
    * \param dist_opt Distance option corresponding to scan format
    * \param reflect_opt Reflectivity option corresponding to
    */
-  std::string SickLMS1xx::_sickScanDataFormatToString( const sick_lms_1xx_dist_opt_t dist_opt,
- 						       const sick_lms_1xx_reflect_opt_t reflect_opt ) const {
-    std::string scan_format_str = "";
+  std::string SickLMS1xx::_sickScanDataFormatToString( const sick_lms_1xx_scan_format_t scan_format ) const {
     
     /* Determine the type of distance measurements */
-    if (dist_opt == SICK_LMS_1XX_DIST_SINGLE_PULSE) {
-      scan_format_str += "(single-pulse range";
-    }
-    else {
-       scan_format_str += "(double-pulse range";
-    }
-    
-    /* Determine the type of reflectivity measurements */
-    if (reflect_opt == SICK_LMS_1XX_REFLECT_8BIT) {
-      scan_format_str += " + 8-bit reflect)";
-    }
-    else if (reflect_opt == SICK_LMS_1XX_REFLECT_16BIT) {
-      scan_format_str += " + 16-bit reflect)";
-    }
-    else {
-      scan_format_str += ")";
+    switch (scan_format) {
+    case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_NONE:
+      return "(single-pulse dist, no reflect)";
+    case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_8BIT:
+      return "(single-pulse dist, 8Bit reflect)";
+    case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_16BIT: 
+      return "(single-pulse dist, 16Bit reflect)";
+    case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_NONE:
+      return "(double-pulse dist, no reflect)";
+    case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_8BIT:
+      return "(double-pulse dist, 8Bit reflect)";
+    case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_16BIT:            
+      return "(double-pulse dist, 16Bit reflect)";
+    default:
+      return "Unknown";
     }
 
-    /* Done! */
-    return scan_format_str;
   } 
 
   /**
@@ -2292,7 +2405,7 @@ namespace SickToolbox {
     const char * token = NULL;
     uint32_t curr_val = 0;
     if ((token = strtok(str_buffer,delimeter)) == NULL) {
-      throw SickIOException("SickLMS1xx::_getNextTokenAsUInt: strtok() failed!");
+      throw SickIOException("SickLMS1xx::_getextTokenAsUInt: strtok() failed!");
     }
 
     if (sscanf(token,"%x",&curr_val) == EOF) {

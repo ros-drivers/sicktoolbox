@@ -18,7 +18,7 @@
 
 #include <string>
 #include <iostream>
-#include <sickld-1.0/SickLD.hh>
+#include <sickld/SickLD.hh>
 
 using namespace std;
 using namespace SickToolbox;

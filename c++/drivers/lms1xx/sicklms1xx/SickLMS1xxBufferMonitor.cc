@@ -48,7 +48,7 @@ namespace SickToolbox {
 
       /* Flush the TCP receive buffer */
       _flushTCPRecvBuffer();
-      
+
       /* Search for STX in the byte stream */
       do {
 	

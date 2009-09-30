@@ -18,7 +18,7 @@
 
 /* Macros */
 #define SICK_LMS_1XX_MSG_HEADER_LEN             (1)  ///< Sick LMS 1xx message header length in bytes
-#define SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN   4*(2604)  ///< Sick LMS 1xx maximum payload length
+#define SICK_LMS_1XX_MSG_PAYLOAD_MAX_LEN    (30000)  ///< Sick LMS 1xx maximum payload length
 #define SICK_LMS_1XX_MSG_TRAILER_LEN            (1)  ///< Sick LMS 1xx length of the message trailer
 
 /* Definition dependencies */
