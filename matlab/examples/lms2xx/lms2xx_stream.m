@@ -1,13 +1,13 @@
-function lms_stream(sick_dev_path,sick_baud)
+function lms2xx_stream(sick_dev_path,sick_baud)
 %==========================================================================
 %==========================================================================
 %
 %  The Sick LIDAR Matlab/C++ Toolbox (Version 1.1)
 %
-%  File: lms_stre.m
-%  Auth: Jason C. Derenick and Thomas H. Miller
-%  Cont: derenick(at)lehigh(dot)edu
-%  Date: 11 January 2008
+%  File: lms_stream.m
+%  Auth: Jason Derenick and Tom Miller
+%  Cont: jasonder(at)seas(dot)upenn(dot)edu
+%  Date: 10 October 2009
 %
 %  In:   sick_dev_path  - Sick device path
 %        sick_baud_rate - Desired baud rate of comm session

@@ -47,7 +47,7 @@ int main(int argc, char * argv[]) {
   SickLMS1xx sick_lms_1xx;
   
   /* Define some buffers to hold the returned measurements */
-  unsigned int range_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS] = {0};
+  unsigned int range_vals[SickLMS1xx::SICK_LMS_1XX_MAX_NUM_MEASUREMENTS] = {0};
   unsigned int num_measurements = 0;
 
   /*
