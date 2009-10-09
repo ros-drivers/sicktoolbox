@@ -52,7 +52,8 @@ namespace SickToolbox {
     SickLIDAR< SickLMS1xxBufferMonitor, SickLMS1xxMessage >( ),
     _sick_ip_address(sick_ip_address),
     _sick_tcp_port(sick_tcp_port),
-    _sick_device_status(SICK_LMS_1XX_STATUS_UNDEFINED),
+    _sick_scan_format(SICK_LMS_1XX_SCAN_FORMAT_UNKNOWN),
+    _sick_device_status(SICK_LMS_1XX_STATUS_UNKNOWN),
     _sick_temp_safe(false),
     _sick_streaming(false)
   {
@@ -136,7 +137,7 @@ namespace SickToolbox {
 
     /* Success */
   }
-
+  
   /**
    * \brief Sets the Sick LMS 1xx scan frequency and resolution
    * \param scan_freq Desired scan frequency (e.g. SickLMS1xx::SICK_LMS_1XX_SCAN_FREQ_50)
@@ -193,61 +194,62 @@ namespace SickToolbox {
   }
 
   /**
-   * \brief Sets the Sick LMS 1xx scan frequency and resolution
-   * \param scan_freq Desired scan frequency (e.g. SickLMS1xx::SICK_LMS_1XX_SCAN_FREQ_50)
-   * \param scan_res Desired scan angular resolution (e.g. SickLMS1xx::SICK_LMS_1XX_SCAN_RES_50)
+   * \brief Gets the Sick LMS 1xx scan frequency
+   * \returns Sick LMS 1xx scan frequency {25,50} Hz
    */
-  void SickLMS1xx::SetSickScanArea( const int scan_start_angle,
-				    const int scan_stop_angle ) throw( SickTimeoutException, SickIOException, SickErrorException ) {
+  sick_lms_1xx_scan_freq_t SickLMS1xx::GetSickScanFreq( ) const throw( SickIOException ) {
 
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::SetSickScanArea: Device NOT Initialized!!!");
+      throw SickIOException("SickLMS1xx::GetSickScanFreq: Device NOT Initialized!!!");
     }
+
+    return IntToSickScanFreq(_convertSickFreqUnitsToHz(_sick_scan_config.sick_scan_freq));
+    
+  }
+
+  /**
+   * \brief Gets the Sick LMS 1xx scan resolution
+   * \returns Sick LMS 1xx scan resolution {0.25 or 0.5} deg
+   */
+  sick_lms_1xx_scan_res_t SickLMS1xx::GetSickScanRes( ) const throw( SickIOException ) {
 
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::SetSickScanFreqAndRes: Device NOT Initialized!!!");
+      throw SickIOException("SickLMS1xx::GetSickScanRes: Device NOT Initialized!!!");
     }
 
-    try {
-
-      /* Is the device streaming? */
-      if (_sick_streaming) {
-	_stopStreamingMeasurements();
-      }
-
-      /* Set the desired configuration */
-      _setSickScanConfig(_sick_scan_config.sick_scan_freq,
-			 _sick_scan_config.sick_scan_res,
-			 scan_start_angle,
-			 scan_stop_angle);
-
-    }
-
-    /* Handle config exceptions */
-    catch (SickErrorException &sick_error_exception) {
-      std::cerr << sick_error_exception.what() << std::endl;
-      throw;
-    }
+    return DoubleToSickScanRes(_convertSickAngleUnitsToDegs(_sick_scan_config.sick_scan_res));    
     
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
+  }
+
+  /**
+   * \brief Gets the Sick LMS 1xx scan area start angle [-45,270] deg
+   * \returns Sick LMS 1xx start angle as double
+   */
+  double SickLMS1xx::GetSickStartAngle( ) const throw( SickIOException ) {
+
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::GetSickStartAngle: Device NOT Initialized!!!");
     }
+
+    return _convertSickAngleUnitsToDegs(_sick_scan_config.sick_start_angle);
     
-    /* Handle write buffer exceptions */
-    catch (SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
-      throw;
+  }
+
+  /**
+   * \brief Gets the Sick LMS 1xx scan area start angle [-45,270] deg
+   * \returns Sick LMS 1xx start angle as double
+   */
+  double SickLMS1xx::GetSickStopAngle( ) const throw( SickIOException ) {
+
+    /* Ensure the device has been initialized */
+    if (!_sick_initialized) {
+      throw SickIOException("SickLMS1xx::GetSickStopAngle: Device NOT Initialized!!!");
     }
-    
-    /* A safety net */
-    catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-      throw;
-    }
+
+    return _convertSickAngleUnitsToDegs(_sick_scan_config.sick_stop_angle);    
     
   }
 
@@ -261,10 +263,15 @@ namespace SickToolbox {
       throw SickIOException("SickLMS1xx::SetSickScanDataFormat: Device NOT Initialized!!!");
     }
 
+    /* If scan data format matches current format ignore it (perhaps a warning is in order?) */
+    if (scan_format == _sick_scan_format) {
+      return;
+    }
+    
     try {
       
       /* Is the device streaming? */
-      if (_sick_streaming) {
+      if (_sick_streaming ) {
 	_stopStreamingMeasurements();
       }
 
@@ -309,7 +316,8 @@ namespace SickToolbox {
 					unsigned int * const range_2_vals,
 					unsigned int * const reflect_1_vals,
 					unsigned int * const reflect_2_vals,
-					unsigned int & num_measurements ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
+					unsigned int & num_measurements,
+					unsigned int * const dev_status ) throw ( SickIOException, SickConfigException, SickTimeoutException ) {
     
     /* Ensure the device has been initialized */
     if (!_sick_initialized) {
@@ -352,34 +360,49 @@ namespace SickToolbox {
     SickLMS1xxMessage recv_message;
     
     try {
-
+      
       /* Grab the next message from the stream */
       _recvMessage(recv_message);
 
     }
 
-     /* Handle a timeout! */
-     catch (SickTimeoutException &sick_timeout_exception) {
-       std::cerr << sick_timeout_exception.what() << std::endl;
-       throw;
-     }
+    /* Handle a timeout! */
+    catch (SickTimeoutException &sick_timeout_exception) {
+      std::cerr << sick_timeout_exception.what() << std::endl;
+      throw;
+    }
     
-     catch (...) {
-       std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
-       throw;
-     }
-
-     /* Allocate a single buffer for payload contents */
+    catch (...) {
+      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      throw;
+    }
+    
+    /* Allocate a single buffer for payload contents */
     uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
-
+    
     recv_message.GetPayloadAsCStr((char *)payload_buffer);
+
+    char * payload_str = NULL;
+    unsigned int null_int = 0;
+
+    /*
+     * Acquire status
+     */
+    if (dev_status != NULL) {
+
+      payload_str = (char *)&payload_buffer[16];      
+      for (unsigned int i = 0; i < 3; i++) {
+	payload_str = _convertNextTokenToUInt(payload_str,null_int);
+      }
+
+      /* Grab the contaimination value */
+      _convertNextTokenToUInt(payload_str,*dev_status);
+
+    }
 
     /*
      * Process DIST1
      */
-    char * payload_str = NULL;
-    unsigned int null_int = 0;
-
     unsigned int num_dist_1_vals = 0;
     unsigned int num_dist_2_vals = 0;
     unsigned int num_rssi_1_vals = 0;
@@ -508,51 +531,6 @@ namespace SickToolbox {
     /* Success! */
     
   }
-
-  /**
-   * Writes the current data format, scan area, and scan freq to EEPROM
-   */
-  void SickLMS1xx::WriteSickParamsToEEPROM( ) throw( SickTimeoutException, SickIOException ) {
-
-    /* Ensure the device has been initialized */
-    if (!_sick_initialized) {
-      throw SickIOException("SickLMS1xx::WriteSickParamsToEEPROM: Device NOT Initialized!!!");
-    }
-
-    try {
-
-      /* Is the device streaming? */
-      if (_sick_streaming) {
-	_stopStreamingMeasurements();
-      }
-
-      std::cout << "\t*** Attempting to write to EEPROM..." << std::endl;
-      
-      /* Set the desired data format! */
-      _writeToEEPROM( );
-
-      std::cout << "\t\tSuccess!" << std::endl;
-      
-    }
-    
-    /* Handle a timeout! */
-    catch (SickTimeoutException &sick_timeout_exception) {
-      std::cerr << sick_timeout_exception.what() << std::endl;
-      throw;
-    }
-    
-    /* Handle write buffer exceptions */
-    catch (SickIOException &sick_io_exception) {
-      std::cerr << sick_io_exception.what() << std::endl;
-      throw;
-    }
-    
-    catch (...) {
-      std::cerr << "SickLMS1xx::SaveParamsToEEPROM: Unknown exception!!!" << std::endl;
-      throw;
-    }
-
-  }
   
   /**
    * \brief Tear down the connection between the host and the Sick LD
@@ -651,6 +629,22 @@ namespace SickToolbox {
   }
 
   /**
+   * \brief Convert sick_lms_1xx_scan_freq_t to corresponding integer
+   */
+  int SickLMS1xx::SickScanFreqToInt( const sick_lms_1xx_scan_freq_t scan_freq ) const {
+
+    switch(scan_freq) {
+    case SICK_LMS_1XX_SCAN_FREQ_25:
+      return 25;
+    case SICK_LMS_1XX_SCAN_FREQ_50:
+      return 50;
+    default:
+      return -1;
+    }  
+
+  }
+  
+  /**
    * \brief Convert double to corresponding sick_lms_1xx_scan_res_t
    */
   SickLMS1xx::sick_lms_1xx_scan_res_t SickLMS1xx::DoubleToSickScanRes( const double scan_res ) const {
@@ -666,6 +660,22 @@ namespace SickToolbox {
     
   }  
 
+  /**
+   * \brief Convert sick_lms_1xx_scan_res_t to corresponding double
+   */
+  double SickLMS1xx::SickScanResToDouble( const sick_lms_1xx_scan_res_t scan_res ) const {
+
+    switch(scan_res) {
+    case SICK_LMS_1XX_SCAN_RES_25:
+      return 0.25;
+    case SICK_LMS_1XX_SCAN_RES_50:
+      return 0.50;
+    default:
+      return -1;
+    }  
+
+  }
+  
   /**
    * \brief Establish a TCP connection to the unit
    */
@@ -824,8 +834,8 @@ namespace SickToolbox {
   }
 
   /**
-    * \brief Teardown TCP connection to Sick LD
-    */
+   * \brief Teardown TCP connection to Sick LMS 1xx
+   */
   void SickLMS1xx::_teardownConnection( ) throw( SickIOException ) {
      
      /* Close the socket! */
@@ -836,7 +846,7 @@ namespace SickToolbox {
    }
   
   /**
-   * \brief Get the status of the Sick LD
+   * \brief Get the status of the Sick LMS 1xx
    */
   void SickLMS1xx::_updateSickStatus( ) throw( SickTimeoutException, SickIOException ) {
 
@@ -894,7 +904,7 @@ namespace SickToolbox {
     /* Extract the message payload */
     recv_message.GetPayload(payload_buffer);
 
-    _sick_device_status = _intToSickStatus(atoi((char *)&payload_buffer[10])); // (sick_lms_1xx_status_t)payload_buffer[11];
+    _sick_device_status = _intToSickStatus(atoi((char *)&payload_buffer[10]));
     _sick_temp_safe = (bool)atoi((char *)&payload_buffer[12]);
 
     /* Success */
@@ -1575,149 +1585,8 @@ namespace SickToolbox {
     std::cout << "\t\tStream started!" << std::endl;
 
   }
-
-//   /**
-//    * \brief Verify the requested data stream
-//    * \param dist_opt Desired distance returns (single-pulse or multi-pulse)
-//    * \param reflect_opt Desired reflectivity returns (none, 8-bit or 16-bit)
-//    */
-//   bool SickLMS1xx::_verifyDataStreamByType( const sick_lms_1xx_scan_type_t scan_type ) throw( SickTimeoutException, SickConfigException ) {
-
-//     bool verified;
-    
-//     do {
-
-//       verified = true;
-      
-//       if (!_sick_streaming) {
-
-// 	/* Set the desired scan config! */
-// 	std::cout << "here 1" << std::endl;
-// 	_setSickScanDataFormat(scan_type);
-      
-// 	/* Wait for device to be measuring */
-// 	std::cout << "here 2" << std::endl;	
-// 	_checkForMeasuringStatus();
-	
-// 	/* Request the data stream... */
-// 	std::cout << "here 3" << std::endl;		
-// 	_startStreamingMeasurements();
-	
-//       }      
-      
-//       SickLMS1xxMessage recv_message;
-      
-//       try {
-	
-// 	/* Grab the next message from the stream */
-// 	_recvMessage(recv_message);
-
-//       }
-      
-//       /* Handle a timeout! */
-//       catch (SickTimeoutException &sick_timeout_exception) {
-// 	std::cerr << sick_timeout_exception.what() << std::endl;
-// 	throw;
-//       }
-      
-//       catch (...) {
-// 	std::cerr << "SickLMS1xx::_verifyDataStream: Unknown exception!!!" << std::endl;
-// 	throw;
-//       }
-      
-//       /* Allocate a single buffer for payload contents */
-//       uint8_t payload_buffer[SickLMS1xxMessage::MESSAGE_PAYLOAD_MAX_LENGTH+1] = {0};
-
-//       /* Acquire the payload as a string */
-//       recv_message.GetPayloadAsCStr((char *)payload_buffer);
-     
-//       /*
-//        * Acquire the number of 16-bit channels...
-//        */
-//       unsigned int substr_pos = 0;
-//       unsigned int num_channels_16 = 0;
-
-//       /* Find DIST1 section */
-//       if (!_findSubString((char *)payload_buffer,"DIST1",recv_message.GetPayloadLength()+1,5,substr_pos)) {
-// 	verified = false;
-//       }
-      
-//       /* Get the number of 16-bit channels */
-//       num_channels_16 = atoi((char *)&payload_buffer[substr_pos-2]);
-
-//       /*
-//        * Acquire the number of 8-bit channels...
-//        */
-//       unsigned int num_channels_8 = 0;
-
-//       /* Check for RSSI1 section */
-//       if (_findSubString((char *)payload_buffer,"RSSI1",recv_message.GetPayloadLength()+1,5,substr_pos)) {
-// 	num_channels_8 = atoi((char *)payload_buffer[substr_pos-2]); 
-//       }
-
-
-//       //recv_message.Print();
-//       std::cout << num_channels_16 << " " << num_channels_8 << std::endl;      
-      
-//       /* Verify the number of channels */
-//       switch (scan_type) {
-//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_NONE:
-// 	{
-// 	  if (num_channels_16 != 1 || num_channels_8 != 0) {
-// 	    verified = false;
-// 	  }
-// 	  break;
-// 	}
-//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_8BITBIT:
-// 	{
-// 	  if (num_channels_16 != 1 || num_channels_8 != 1) {
-// 	    verified = false;
-// 	  }
-// 	  break;
-// 	}
-//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_SINGLE_PULSE_REFLECT_16BITBIT:
-// 	{
-// 	  if (num_channels_16 != 2 || num_channels_8 != 0) {
-// 	    verified = false;
-// 	  }
-// 	  break;
-// 	}
-//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_NONE:
-// 	{
-// 	  if (num_channels_16 != 2 || num_channels_8 != 0) {
-// 	    verified = false;
-// 	  }
-// 	  break;
-// 	}
-//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_8BITBIT:
-// 	{
-// 	  if (num_channels_16 != 2 || num_channels_8 != 2) {
-// 	    verified = false;
-// 	  }	
-// 	  break;
-// 	}
-//       case SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_16BITBIT:
-// 	{
-// 	  if (num_channels_16 != 4 || num_channels_8 != 0) {
-// 	    verified = false;
-// 	  }	
-// 	  break;
-// 	}
-//       default:
-// 	throw SickConfigException("SickLMS1xx::_verifyDataStreamByType: Unrecognized data stream type!");
-// 	break;
-//       }
-
-//       if (!verified && _sick_streaming) {
-// 	std::cout << "here 4" << std::endl;
-// 	_stopStreamingMeasurements();
-//       }
-      
-//     } while (!verified);
-
-//   }
-    
-  /**
+  
+  /*
    * \brief Start Streaming Values
    */
   void SickLMS1xx::_startStreamingMeasurements( ) throw( SickTimeoutException, SickIOException ) {
@@ -2035,6 +1904,9 @@ namespace SickToolbox {
 
       /* Reinitialize the Sick so it uses the requested format */
       _reinitialize();
+
+      /* Set the sick scan data format */
+      _sick_scan_format = scan_format;
       
     }
         
@@ -2187,7 +2059,6 @@ namespace SickToolbox {
 	
   }
 
-  
   /**
    * \brief Sends a message and searches for the reply with given command type and command
    * \param &send_message The message to be sent to the Sick LMS 2xx unit
@@ -2282,7 +2153,7 @@ namespace SickToolbox {
     case 7:
       return SICK_LMS_1XX_STATUS_READY_FOR_MEASUREMENT;
     default:
-      return SICK_LMS_1XX_STATUS_UNDEFINED;
+      return SICK_LMS_1XX_STATUS_UNKNOWN;
     }
   }
 
@@ -2323,9 +2194,9 @@ namespace SickToolbox {
   void SickLMS1xx::_printInitFooter( ) const {
 
     std::cout << "\t*** Init. complete: Sick LMS 1xx is online and ready!" << std::endl; 
-    std::cout << "\tScan Frequency: " << ((double)_sick_scan_config.sick_scan_freq)/100 << "(Hz)" << std::endl;  
-    std::cout << "\tScan Resolution: " << ((double)_sick_scan_config.sick_scan_res)/10000 << " (deg)" << std::endl;
-    std::cout << "\tScan Area: " <<  "[" << ((double)_sick_scan_config.sick_start_angle)/10000 << "," << ((double)_sick_scan_config.sick_stop_angle)/10000 << "]" << std::endl;
+    std::cout << "\tScan Frequency: " << _convertSickFreqUnitsToHz(_sick_scan_config.sick_scan_freq) << "(Hz)" << std::endl;  
+    std::cout << "\tScan Resolution: " << _convertSickAngleUnitsToDegs(_sick_scan_config.sick_scan_res) << " (deg)" << std::endl;
+    std::cout << "\tScan Area: " <<  "[" << _convertSickAngleUnitsToDegs(_sick_scan_config.sick_start_angle) << "," << _convertSickAngleUnitsToDegs(_sick_scan_config.sick_stop_angle) << "]" << std::endl;
     std::cout << std::endl;
     
   }

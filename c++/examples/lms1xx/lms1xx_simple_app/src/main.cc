@@ -41,17 +41,18 @@ int main(int argc, char* argv[])
   }
   
   try {
+    unsigned int status = 1;
     unsigned int num_measurements = 0;
-    unsigned int range_1_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS];
-    unsigned int range_2_vals[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS];
+    unsigned int range_1_vals[SickLMS1xx::SICK_LMS_1XX_MAX_NUM_MEASUREMENTS];
+    unsigned int range_2_vals[SickLMS1xx::SICK_LMS_1XX_MAX_NUM_MEASUREMENTS];
     //sick_lms_1xx.SetSickScanFreqAndRes(SickLMS1xx::SICK_LMS_1XX_SCAN_FREQ_25,
     //SickLMS1xx::SICK_LMS_1XX_SCAN_RES_25);
     //sick_lms_1xx.SetSickScanDataFormat(SickLMS1xx::SICK_LMS_1XX_DIST_DOUBLE_PULSE,
     //				         SickLMS1xx::SICK_LMS_1XX_REFLECT_NONE);
     sick_lms_1xx.SetSickScanDataFormat(SickLMS1xx::SICK_LMS_1XX_SCAN_FORMAT_DIST_DOUBLE_PULSE_REFLECT_16BIT);
-    for (int i = 0; i < 100; i++) {
-      sick_lms_1xx.GetSickMeasurements(range_1_vals,range_2_vals,range_1_vals,range_2_vals,num_measurements);
-      std::cout << i << ": " << num_measurements << std::endl;
+    for (int i = 0; i < 1000; i++) {
+      sick_lms_1xx.GetSickMeasurements(range_1_vals,range_2_vals,range_1_vals,range_2_vals,num_measurements,&status);
+      std::cout << i << ": " << num_measurements << " " << status << std::endl;
     }
   }
   

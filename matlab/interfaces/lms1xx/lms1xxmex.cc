@@ -277,11 +277,13 @@ void setScanFreqAndRes(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[
 void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
    /* Struct field names */
-   const char *struct_keys[] = { "range1",        // Angular resolution of the device
- 				 "range2",         // Field of view of the Sick
-                                 "reflect1",
-                                 "reflect2" };
-  
+  const char *struct_keys[] = { "res",
+				"fov",
+				"range1",        // Angular resolution of the device
+				"range2",        // Field of view of the Sick
+				"reflect1",
+				"reflect2" };
+
    /* Misc. buffers */
    int dims[2] = {0,1};
    unsigned int range_1_values[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS] = {0};
@@ -289,8 +291,11 @@ void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
    unsigned int reflect_1_values[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS] = {0};
    unsigned int reflect_2_values[SickLMS1xx::SICK_MAX_NUM_MEASUREMENTS] = {0};   
    unsigned int num_measurements = 0;
+   double scan_res = 0, scan_fov = 0;
   
    /* Declare mxArray ptrs */
+   mxArray *mx_res_scalar = NULL;
+   mxArray *mx_fov_scalar = NULL;
    mxArray *mx_range_1_array = NULL;
    mxArray *mx_range_2_array = NULL;  
    mxArray *mx_reflect_1_array = NULL; 
@@ -460,6 +465,11 @@ void grabSickVals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
      mexErrMsgTxt("sicklms1xx: Failed to create struct array!");
    }
 
+   /* Create the return scalars */
+   if(!(mx_res_scalar = mxCreateDoubleScalar(scan_res)) || !(mx_fov_scalar = mxCreateDoubleScalar(scan_fov))) {
+     mexErrMsgTxt("sicklms1xx: Failed to create scalar!");
+   }
+   
    /* Construct return struct based upon requested stream */
    for(unsigned int i = 0; i < num_measurements; i++) {
 
