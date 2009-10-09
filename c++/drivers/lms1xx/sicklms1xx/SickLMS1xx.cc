@@ -352,7 +352,7 @@ namespace SickToolbox {
     }
     
     catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      std::cerr << "SickLMS1xx::GetSickMeasurements: Unknown exception!!!" << std::endl;
       throw;
     }
 
@@ -373,7 +373,7 @@ namespace SickToolbox {
     }
     
     catch (...) {
-      std::cerr << "SickLMS1xx::SetSickScanArea: Unknown exception!!!" << std::endl;
+      std::cerr << "SickLMS1xx::GetSickMeasurements: Unknown exception!!!" << std::endl;
       throw;
     }
     
@@ -414,7 +414,7 @@ namespace SickToolbox {
       const char * substr_dist_1 = "DIST1";
       unsigned int substr_dist_1_pos = 0;
       if (!_findSubString((char *)payload_buffer,substr_dist_1,recv_message.GetPayloadLength()+1,5,substr_dist_1_pos)) {
-	throw SickIOException("SickLMS1xx::GetSickRangeAndReflect: _findSubString() failed!");
+	throw SickIOException("SickLMS1xx::GetSickMeasurements: _findSubString() failed!");
       }
       
       /* Extract Num DIST1 Values */
