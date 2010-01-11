@@ -1,7 +1,7 @@
 <package>
-<description brief="A simple Sick Driver">
+<description brief="A simple driver for Sick range-finders">
 
-The Sick LIDAR Matlab/C++ Toolbox offers stable and easy-to-use C++ drivers for Sick LMS and Sick LD LIDARs. It provides a Matlab Mex interface for streaming LIDAR returns directly into Matlab. Also included are config utilities, examples, and tutorials.
+  The Sick LIDAR Matlab/C++ Toolbox offers stable and easy-to-use C++ drivers for Sick LMS and Sick LD LIDARs. It provides a Matlab Mex interface for streaming LIDAR returns directly into Matlab. Also included are config utilities, examples, and tutorials. This package contains version 1.0 of the toolbox
 
 </description>
 <author>Jason Derenik</author>
