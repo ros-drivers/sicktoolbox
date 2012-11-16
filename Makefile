@@ -5,7 +5,7 @@ TARBALL_URL = http://pr.willowgarage.com/downloads/sicktoolbox-1.0.tar.gz
 SOURCE_DIR = build/sicktoolbox-1.0
 #MD5SUM_FILE = sicktoolbox-1.0.tar.gz.md5sum
 UNPACK_CMD = tar xzf
-TARBALL_PATCH = stdlib_include.patch power_delay.patch 
+TARBALL_PATCH = stdlib_include.patch power_delay.patch unistd.patch
 
 include $(shell rospack find mk)/download_unpack_build.mk
 

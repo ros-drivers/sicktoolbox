@@ -1,0 +1,22 @@
+diff -urN sicktoolbox-1.0Ori/c++/drivers/base/src/SickBufferMonitor.hh sicktoolbox-1.0/c++/drivers/base/src/SickBufferMonitor.hh
+--- c++/drivers/base/src/SickBufferMonitor.hh        2012-11-15 18:28:30.071963442 -0800
++++ sicktoolbox-1.0/c++/drivers/base/src/SickBufferMonitor.hh   2012-11-15 18:29:07.304743686 -0800
+@@ -19,6 +19,7 @@
+ /* Dependencies */
+ #include <iostream>
+ #include <pthread.h>
++#include <unistd.h>
+ #include "SickException.hh"
+ 
+ /* Associate the namespace */
+diff -urN sicktoolbox-1.0Ori/c++/drivers/base/src/SickLIDAR.hh sicktoolbox-1.0/c++/drivers/base/src/SickLIDAR.hh
+--- c++/drivers/base/src/SickLIDAR.hh        2012-11-15 18:28:30.067963358 -0800
++++ sicktoolbox-1.0/c++/drivers/base/src/SickLIDAR.hh   2012-11-15 18:29:26.293142072 -0800
+@@ -39,6 +39,7 @@
+ #include <pthread.h>
+ #include <arpa/inet.h>
+ #include <sys/time.h>
++#include <unistd.h>
+ #include "SickException.hh"
+ 
+ /* Associate the namespace */
