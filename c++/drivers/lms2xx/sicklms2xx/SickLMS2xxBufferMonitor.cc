@@ -15,17 +15,17 @@
  */
 
 /* Auto-generated header */
-#include "SickConfig.hh"
+#include <sicktoolbox/SickConfig.hh>
 
 /* Implementation dependencies */
 #include <iostream>
 #include <termios.h>
 
-#include "SickLMS2xx.hh"
-#include "SickLMS2xxBufferMonitor.hh"
-#include "SickLMS2xxMessage.hh"
-#include "SickLMS2xxUtility.hh"
-#include "SickException.hh"
+#include <sicktoolbox/SickLMS2xx.hh>
+#include <sicktoolbox/SickLMS2xxBufferMonitor.hh>
+#include <sicktoolbox/SickLMS2xxMessage.hh>
+#include <sicktoolbox/SickLMS2xxUtility.hh>
+#include <sicktoolbox/SickException.hh>
 
 /* Associate the namespace */
 namespace SickToolbox {

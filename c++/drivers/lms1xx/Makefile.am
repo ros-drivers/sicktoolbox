@@ -1,1 +1,0 @@
-SUBDIRS=sicklms1xx

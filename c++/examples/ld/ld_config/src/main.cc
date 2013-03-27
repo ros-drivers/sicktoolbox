@@ -24,7 +24,7 @@
 #include <iostream>
 #include <signal.h>
 #include <stdlib.h>
-#include <sickld/SickLD.hh>
+#include <sicktoolbox/SickLD.hh>
 #include <stdlib.h>
 #include "ConfigFile.h"
 

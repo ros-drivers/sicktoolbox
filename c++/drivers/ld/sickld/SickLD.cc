@@ -14,7 +14,7 @@
  */
 
 /* Auto-generated header */
-#include "SickConfig.hh"
+#include <sicktoolbox/SickConfig.hh>
 
 /* Implementation dependencies */
 #include <string>
@@ -34,11 +34,11 @@
 #include <vector>             // for returning the results of parsed strings
 #include <errno.h>            // for timing connect()
 
-#include "SickLD.hh"
-#include "SickLDMessage.hh"
-#include "SickLDBufferMonitor.hh"
-#include "SickLDUtility.hh"   
-#include "SickException.hh"
+#include <sicktoolbox/SickLD.hh>
+#include <sicktoolbox/SickLDMessage.hh>
+#include <sicktoolbox/SickLDBufferMonitor.hh>
+#include <sicktoolbox/SickLDUtility.hh>   
+#include <sicktoolbox/SickException.hh>
 
 /* Associate the namespace */
 namespace SickToolbox {

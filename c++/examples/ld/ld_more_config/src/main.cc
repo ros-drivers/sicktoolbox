@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <sickld/SickLD.hh>
+#include <sicktoolbox/SickLD.hh>
 
 using namespace std;
 using namespace SickToolbox;

@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <sicklms2xx/SickLMS2xx.hh>
+#include <sicktoolbox/SickLMS2xx.hh>
 
 /* Use the namespace */
 using namespace std;

@@ -1,1 +1,0 @@
-SUBDIRS=ld lms1xx lms2xx

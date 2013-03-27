@@ -20,7 +20,7 @@
 #include <iostream>
 #include <signal.h>
 #include <stdlib.h>
-#include <sicklms2xx/SickLMS2xx.hh>
+#include <sicktoolbox/SickLMS2xx.hh>
 
 #define INVALID_OPTION_STRING "   Invalid option!!! :o("
 #define PROMPT_STRING "lms2xx?> "

@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <sickld/SickLD.hh>
+#include <sicktoolbox/SickLD.hh>
 
 /* Define the number of active sectors */
 #define NUM_ACTIVE_SECTORS (3)

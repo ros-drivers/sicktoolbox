@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <sickld/SickLD.hh>
+#include <sicktoolbox/SickLD.hh>
 
 /* Use the namespace */
 using namespace std;

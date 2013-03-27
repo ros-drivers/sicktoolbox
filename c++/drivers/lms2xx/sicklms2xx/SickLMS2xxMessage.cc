@@ -14,14 +14,14 @@
  */
 
 /* Auto-generated header */
-#include "SickConfig.hh"
+#include <sicktoolbox/SickConfig.hh>
 
 /* Implementation dependencies */
 #include <iomanip>
 #include <iostream>
 
-#include "SickLMS2xxMessage.hh"
-#include "SickLMS2xxUtility.hh"
+#include <sicktoolbox/SickLMS2xxMessage.hh>
+#include <sicktoolbox/SickLMS2xxUtility.hh>
 
 /* Associate the namespace */
 namespace SickToolbox {

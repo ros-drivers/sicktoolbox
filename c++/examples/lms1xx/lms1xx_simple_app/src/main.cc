@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string>
 #include <iostream>
-#include <sicklms1xx/SickLMS1xx.hh>
+#include <sicktoolbox/SickLMS1xx.hh>
 
 using namespace std;
 using namespace SickToolbox;
