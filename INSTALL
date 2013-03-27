@@ -15,6 +15,7 @@ steps:
   To install the toolbox C++ libraries do the following from the
   project's root:
 
+    libtoolize
     aclocal -I m4
     autoheader
     automake --add-missing
