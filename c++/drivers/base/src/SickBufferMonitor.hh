@@ -19,6 +19,7 @@
 /* Dependencies */
 #include <iostream>
 #include <pthread.h>
+#include <unistd.h>
 #include "SickException.hh"
 
 /* Associate the namespace */

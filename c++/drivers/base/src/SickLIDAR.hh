@@ -39,6 +39,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
+#include <unistd.h>
 #include "SickException.hh"
 
 /* Associate the namespace */
