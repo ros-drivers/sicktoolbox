@@ -93,8 +93,9 @@ namespace SickToolbox {
    * \brief Attempts to initialize the Sick LMS 2xx and then sets communication at
    *        at the given baud rate.
    * \param desired_baud_rate Desired session baud rate
+   * \param delay Delay to wait for SICK to power on (in seconds)
    */
-  void SickLMS2xx::Initialize( const sick_lms_2xx_baud_t desired_baud_rate )
+  void SickLMS2xx::Initialize( const sick_lms_2xx_baud_t desired_baud_rate, const uint32_t delay )
     throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException ) {
 
     /* Buffer the desired baud rate in case we have to reset */
@@ -106,7 +107,7 @@ namespace SickToolbox {
       
       /* Initialize the serial term for communication */
       std::cout << "\tAttempting to open device @ " << _sick_device_path << std::endl << std::flush;
-      _setupConnection();
+      _setupConnection(delay);
       std::cout << "\t\tDevice opened!" << std::endl << std::flush;
 
       /* Start/reset the buffer monitor */
@@ -2313,18 +2314,29 @@ namespace SickToolbox {
     }
     
   }
+
+  /**
+   * \brief Attempts to open a I/O stream using the device path given at object instantiation.
+   */
+   void SickLMS2xx::_setupConnection() throw ( SickIOException, SickThreadException ) {
+     SickLMS2xx::_setupConnection(0);
+   }
   
   /**
    * \brief Attempts to open a I/O stream using the device path given at object instantiation
+   * \param delay Delay to wait for SICK to power on. (In seconds)
    */
-  void SickLMS2xx::_setupConnection( ) throw ( SickIOException, SickThreadException ) {
+  void SickLMS2xx::_setupConnection( const uint32_t delay ) throw ( SickIOException, SickThreadException ) {
 
     try {
     
       /* Open the device */
-      if((_sick_fd = open(_sick_device_path.c_str(), O_RDWR | O_NOCTTY)) < 0) {
+      if((_sick_fd = open(_sick_device_path.c_str(), O_RDWR | O_NOCTTY | O_NDELAY)) < 0) {
 	throw SickIOException("SickLMS2xx::_setupConnection: - Unable to open serial port");
       }
+
+      // Sleep to allow the SICK to power on for some applications
+      sleep(delay);
       
       /* Backup the original term settings */
       if(tcgetattr(_sick_fd,&_old_term) < 0) {

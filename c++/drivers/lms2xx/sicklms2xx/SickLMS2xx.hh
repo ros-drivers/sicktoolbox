@@ -514,7 +514,7 @@ namespace SickToolbox {
     ~SickLMS2xx( );
     
     /** Initializes the Sick */
-    void Initialize( const sick_lms_2xx_baud_t desired_baud_rate )
+    void Initialize( const sick_lms_2xx_baud_t desired_baud_rate, const uint32_t delay = 0 )
       throw( SickConfigException, SickTimeoutException, SickIOException, SickThreadException);
 
     /** Uninitializes the Sick */
@@ -753,7 +753,8 @@ namespace SickToolbox {
     struct termios _old_term;
 
     /** Opens the terminal for serial communication. */
-    void _setupConnection( ) throw( SickIOException, SickThreadException );
+    void _setupConnection() throw( SickIOException, SickThreadException );
+    void _setupConnection(const uint32_t delay ) throw( SickIOException, SickThreadException );
 
     /** Closes the serial communication terminal. */
     void _teardownConnection( ) throw( SickIOException );
