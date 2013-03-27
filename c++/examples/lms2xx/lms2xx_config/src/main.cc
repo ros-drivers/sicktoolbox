@@ -14,6 +14,7 @@
  */
 
 /* Implementation dependencies */
+#include <stdlib.h>
 #include <string>
 #include <sstream>
 #include <iostream>

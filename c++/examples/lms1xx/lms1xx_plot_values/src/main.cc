@@ -17,6 +17,7 @@
  */
 
 /* Implementation dependencies */
+#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <signal.h>

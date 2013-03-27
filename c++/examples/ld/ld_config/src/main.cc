@@ -23,6 +23,7 @@
 #include <string>
 #include <iostream>
 #include <signal.h>
+#include <stdlib.h>
 #include <sickld/SickLD.hh>
 #include <stdlib.h>
 #include "ConfigFile.h"

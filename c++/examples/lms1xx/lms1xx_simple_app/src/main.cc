@@ -13,6 +13,7 @@
  * See http://sicktoolbox.sourceforge.net
  */
 
+#include <stdlib.h>
 #include <string>
 #include <iostream>
 #include <sicklms1xx/SickLMS1xx.hh>

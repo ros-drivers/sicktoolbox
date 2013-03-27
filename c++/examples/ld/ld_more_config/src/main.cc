@@ -16,6 +16,7 @@
  * See http://sicktoolbox.sourceforge.net
  */
 
+#include <stdlib.h>
 #include <string>
 #include <iostream>
 #include <sickld/SickLD.hh>

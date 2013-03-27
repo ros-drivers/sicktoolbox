@@ -14,6 +14,7 @@
  * See http://sicktoolbox.sourceforge.net
  */
 
+#include <stdlib.h>
 #include <string>
 #include <iomanip>
 #include <iostream>
