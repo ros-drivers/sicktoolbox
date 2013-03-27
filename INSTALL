@@ -15,6 +15,10 @@ steps:
   To install the toolbox C++ libraries do the following from the
   project's root:
 
+    aclocal -I m4
+    autoheader
+    automake --add-missing
+    autoconf
     ./configure
     make
     make install (Note: This step must be done as admin/root)

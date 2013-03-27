@@ -33,6 +33,7 @@
 #include <sstream>            // for parsing ip addresses
 #include <vector>             // for returning the results of parsed strings
 #include <errno.h>            // for timing connect()
+#include <stdio.h>
 
 #include "SickLMS1xx.hh"
 #include "SickLMS1xxMessage.hh"
