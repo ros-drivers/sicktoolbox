@@ -1,7 +1,11 @@
 -------------------------------------------------------------------
 -------------------------------------------------------------------
-The Sick LIDAR Matlab/C++ Toolbox
+The Sick LIDAR C++ Toolbox
 -------------------------------------------------------------------
+
+This is the ROS fork of the Sick LIDAR C++ Toolbox.  If you're
+looking for Matlab, please see the original at:
+http://sicktoolbox.sourceforge.net/
 
 *** Quick Start
 To get up and running quickly with the toolbox, be sure to read
