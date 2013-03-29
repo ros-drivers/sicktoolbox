@@ -4,7 +4,7 @@ project(sicktoolbox)
 find_package(catkin REQUIRED)
 
 ## System dependencies are found with CMake's conventions
-find_package(Threads)
+find_package(Threads REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
