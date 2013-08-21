@@ -9,7 +9,7 @@
     The SICK LIDAR Matlab/C++ Toolbox offers stable and easy-to-use C++ drivers for SICK LMS 2xx and SICK LD LIDARs.  Also included are config utilities, examples, and tutorials.
   </description>
 
-  <maintainer email="chadrockey@willowgarage.com">Chad Rockey</maintainer>
+  <maintainer email="chadrockey@gmail.com">Chad Rockey</maintainer>
 
   <license>BSD</license>
 
